@@ -1,15 +1,20 @@
 package age
-// FiloSottile age encryption header obfuscation
+
+// FiloSottile age encryption header obfuscation.
 import (
 	"bytes"
 	"errors"
 )
 
 var (
-	endOfHeader = []byte{45, 45, 45, 32}
+	//nolint:gochecknoglobals
+	endOfHeader  = []byte{45, 45, 45, 32}
+	//nolint:gochecknoglobals
 	endFlag     = []byte{0, 255, 1, 254}
-	lengthOfKey = 47
 )
+//nolint:gochecknoglobals
+const lengthOfKey = 47
+
 
 func ObfHeader(payload []byte) ([]byte, error) {
 	headerIndex := bytes.Index(payload, endOfHeader)
@@ -27,8 +32,8 @@ func ObfHeader(payload []byte) ([]byte, error) {
 		pad[i] = e ^ counter
 		counter--
 	}
-
-	obfHeader := append(pad[:], endFlag[:]...)
+	// nolint:makezero
+	obfHeader := append(pad, endFlag...)
 	return bytes.ReplaceAll(payload, header, obfHeader), nil
 }
 

@@ -1,9 +1,9 @@
 package hash
 
 import (
-	"encoding/hex"
-	//"errors"
 	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"io"
 
 	"github.com/D3vl0per/crypt/generic"
@@ -24,7 +24,7 @@ type keys struct {
 	Hash string
 }
 
-// Easy to user argon2ID toolset
+// Easy to user argon2ID toolset.
 func Argon2IDBase(pass, salt []byte) (keys, error) {
 	hash := argon2.IDKey(pass, salt, aTime, aMemory, aThreads, aKeyLen)
 
@@ -54,11 +54,9 @@ func Argon2ID(pass []byte) (keys, error) {
 }
 
 func Argon2IDCustomSalt(pass, salt []byte) (keys, error) {
-	/*
-		if len(salt) != 16 {
-			return keys{}, errors.New("salt length is incorrect")
-		}
-	*/
+	if len(salt) != 16 {
+		return keys{}, errors.New("salt length is incorrect")
+	}
 	return Argon2IDBase(pass, salt)
 }
 
@@ -76,7 +74,7 @@ func Argon2IDVerify(pass []byte, salt, hash string) (bool, error) {
 	return generic.Compare(hash_raw, hash_to_validate), nil
 }
 
-// Easy to user HKDF toolset
+// Easy to user HKDF toolset.
 func HKDFBase(secret, salt, msg []byte) ([]byte, error) {
 	hash := sha256.New
 	kdf := hkdf.New(hash, secret, salt, msg)

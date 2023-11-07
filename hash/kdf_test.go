@@ -7,33 +7,34 @@ import (
 	"github.com/D3vl0per/crypt/generic"
 	"github.com/D3vl0per/crypt/hash"
 	a "github.com/stretchr/testify/assert"
+	r "github.com/stretchr/testify/require"
 )
 
 func TestArgon2ID(t *testing.T) {
 	pass := []byte("Correct Horse Battery Staple")
 
 	blob, err := hash.Argon2ID(pass)
-	a.Nil(t, err)
+	r.NoError(t, err)
 
 	isValid, err := hash.Argon2IDVerify(pass, blob.Salt, blob.Hash)
-	a.Nil(t, err)
+	r.NoError(t, err)
 	a.True(t, isValid)
 }
 
 func TestArgon2IDCustomSalt(t *testing.T) {
 	pass := []byte("Correct Horse Battery Staple")
 	salt, err := generic.CSPRNG(16)
-	a.Nil(t, err)
+	r.NoError(t, err)
 
 	blob, err := hash.Argon2IDCustomSalt(pass, salt)
-	a.Nil(t, err)
+	r.NoError(t, err)
 
 	isValid, err := hash.Argon2IDVerify(pass, blob.Salt, blob.Hash)
-	a.Nil(t, err)
+	r.NoError(t, err)
 	a.True(t, isValid)
 
 	isValid, err = hash.Argon2IDVerify(pass, hex.EncodeToString(salt), blob.Hash)
-	a.Nil(t, err)
+	r.NoError(t, err)
 	a.True(t, isValid)
 }
 
@@ -42,10 +43,10 @@ func TestHKDF(t *testing.T) {
 	msg := []byte("https://xkcd.com/936/")
 
 	kdf, err := hash.HKDF(secret, msg)
-	a.Nil(t, err)
+	r.NoError(t, err)
 
 	isValid, err := hash.HKDFVerify(secret, msg, kdf.Salt, kdf.Hash)
-	a.Nil(t, err)
+	r.NoError(t, err)
 	a.True(t, isValid)
 }
 

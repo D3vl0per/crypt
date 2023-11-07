@@ -8,7 +8,7 @@ import (
 
 func CSPRNG(n int64) ([]byte, error) {
 	random := make([]byte, n)
-	if _, err := io.ReadFull(crypto_rand.Reader, random[:]); err != nil {
+	if _, err := io.ReadFull(crypto_rand.Reader, random); err != nil {
 		return []byte{}, err
 	}
 	return random, nil

@@ -7,31 +7,31 @@ import (
 )
 
 func GzipCompress(src []byte, level int) ([]byte, error) {
-	var b bytes.Buffer
-	gz, err := gzip.NewWriterLevel(&b, level)
+	var buff bytes.Buffer
+	gzip, err := gzip.NewWriterLevel(&buff, level)
 	if err != nil {
 		return []byte{}, err
 	}
-	if _, err := gz.Write(src); err != nil {
+	if _, err := gzip.Write(src); err != nil {
 		return []byte{}, err
 	}
-	if err := gz.Close(); err != nil {
+	if err := gzip.Close(); err != nil {
 		return []byte{}, err
 	}
 
-	return b.Bytes(), nil
+	return buff.Bytes(), nil
 }
 
 func GzipDecompress(src []byte) ([]byte, error) {
 	rdata := bytes.NewReader(src)
-	r, err := gzip.NewReader(rdata)
+	gzip, err := gzip.NewReader(rdata)
 	if err != nil {
 		return []byte{}, err
 	}
-	s, err := io.ReadAll(r)
+	raw, err := io.ReadAll(gzip)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	return s, nil
+	return raw, nil
 }

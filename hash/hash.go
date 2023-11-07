@@ -8,10 +8,6 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
-// TODO:
-// - SHA3
-// - SHAKE https://asecuritysite.com/golang/goshake
-
 func Blake256(data []byte) ([]byte, error) {
 	h, err := blake2b.New256(nil)
 	if err != nil {

@@ -1,0 +1,31 @@
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet 
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec
+    - asciicheck
+    - bodyclose
+    - gochecknoglobals
+    - godot 
+    - godox
+    - makezero
+    - testifylint
+
+linters-settings:
+  gosec:
+    includes: []
+    exclude-generated: true
+    severity: low
+    confidence: medium
+    concurrency: 4
+    config:
+      global:
+        nosec: true
+        "#nosec": "#do-not-chech-gosec"
+        show-ignored: true
+        audit: true

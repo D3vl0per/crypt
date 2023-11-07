@@ -1,6 +1,6 @@
 module github.com/D3vl0per/crypt
 
-go 1.21.1
+go 1.21.3
 
 require (
 	filippo.io/age v1.1.1

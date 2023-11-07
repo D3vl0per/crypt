@@ -9,73 +9,6 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
-/*
-// DO NO USE
-
-	func EncryptSecretBox(secret, plaintext []byte) ([]byte, error) {
-		if len(secret) != 32 {
-			return []byte{}, errors.New("wrong secret size")
-		}
-
-		var secretKey [32]byte
-		copy(secretKey[:], secret)
-
-		nonce_raw, err := CSPRNG(24)
-		if err != nil {
-			return []byte{}, err
-		}
-
-		var nonce [24]byte
-		copy(nonce[:], nonce_raw)
-
-		return secretbox.Seal(nonce[:], plaintext, &nonce, &secretKey), nil
-	}
-
-	func DecryptSecretBox(secret, ciphertext []byte) ([]byte, error) {
-		if len(secret) != 32 {
-			return []byte{}, errors.New("wrong secret size")
-		}
-
-		var secretKey [32]byte
-		copy(secretKey[:], secret)
-
-		var nonce [24]byte
-		copy(nonce[:], ciphertext[:24])
-
-		decrypted, ok := secretbox.Open(nil, ciphertext[24:], &nonce, &secretKey)
-		if !ok {
-			return []byte{}, errors.New("decryption error")
-		}
-
-		return decrypted, nil
-	}
-*/
-/*
-func EncryptAESCTR(){
-		cipher, _ := aes.NewCipher([]byte(key))
-		decrypted := make([]byte, len(data))
-		size := 16
-
-		for bs, be := 0, size; bs < len(data); bs, be = bs+size, be+size {
-			cipher.Decrypt(decrypted[bs:be], data[bs:be])
-		}
-
-		return decrypted
-	}
-}
-
-func DecryptAESCTR(data, key []byte) []byte{
-	cipher, _ := aes.NewCipher([]byte(key))
-	decrypted := make([]byte, len(data))
-	size := 16
-
-	for bs, be := 0, size; bs < len(data); bs, be = bs+size, be+size {
-		cipher.Decrypt(decrypted[bs:be], data[bs:be])
-	}
-
-	return decrypted
-}
-*/
 func EncryptXChaCha20(secret, plaintext []byte) ([]byte, error) {
 	if len(secret) != chacha20poly1305.KeySize {
 		return []byte{}, errors.New("wrong secret size")
@@ -118,7 +51,6 @@ func DecryptXChacha20(secret, ciphertext []byte) ([]byte, error) {
 }
 
 func XOR(payload, key []byte) ([]byte, error) {
-
 	if len(payload) != len(key) {
 		return []byte{}, errors.New("insecure xor operation, key and payload length need to equal")
 	}
@@ -136,7 +68,6 @@ func XOR(payload, key []byte) ([]byte, error) {
 }
 
 func EncryptStreamXChacha20(in io.Reader, out io.Writer) (key []byte, err error) {
-
 	key = make([]byte, chacha20poly1305.KeySize)
 	if _, err = generic.Rand().Read(key); err != nil {
 		return []byte{}, err
@@ -153,7 +84,6 @@ func EncryptStreamXChacha20CustomKey(in io.Reader, out io.Writer, key []byte) (e
 }
 
 func encryptXChaCha20Stream(in io.Reader, out io.Writer, key []byte) error {
-
 	w, err := streamWriter(out, key)
 	if err != nil {
 		return err
@@ -169,7 +99,6 @@ func encryptXChaCha20Stream(in io.Reader, out io.Writer, key []byte) error {
 }
 
 func streamWriter(dst io.Writer, key []byte) (io.WriteCloser, error) {
-
 	nonce := make([]byte, chacha20poly1305.NonceSizeX)
 	if _, err := generic.Rand().Read(nonce); err != nil {
 		return nil, err
@@ -187,7 +116,6 @@ func DecryptStreamXChacha20Custom(in io.Reader, out io.Writer, key []byte) (err 
 }
 
 func DecryptStreamXChacha20(in io.Reader, out io.Writer, key []byte) error {
-
 	r, err := streamReader(in, key)
 	if err != nil {
 		return err

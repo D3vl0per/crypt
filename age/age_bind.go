@@ -25,7 +25,6 @@ func SetupKeychain(secretKey string, publicKeys []string) (Keychain, error) {
 	keychain.recipients = append(keychain.recipients, identity.Recipient())
 
 	for _, e := range publicKeys {
-
 		publicKey, err := age.ParseX25519Recipient(e)
 		if err != nil {
 			return Keychain{}, err

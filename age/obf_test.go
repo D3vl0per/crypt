@@ -6,6 +6,7 @@ import (
 
 	"github.com/D3vl0per/crypt/age"
 	a "github.com/stretchr/testify/assert"
+	r "github.com/stretchr/testify/require"
 )
 
 func TestObf(t *testing.T) {
@@ -15,21 +16,21 @@ func TestObf(t *testing.T) {
 
 	obfTestString := []byte("Testing")
 	obfEncrypted, err := obfKeychain.Encrypt(obfTestString, false, false)
-	a.Nil(t, err)
+	r.NoError(t, err)
 
 	a.True(t, bytes.Contains(obfEncrypted, []byte("age-encryption.org/")))
 
 	obfEncryptedObf, err := age.ObfHeader(obfEncrypted)
-	a.Nil(t, err)
+	r.NoError(t, err)
 	a.False(t, bytes.Contains(obfEncryptedObf, []byte("age-encryption.org/")))
 
 	obfEncryptedDeObf, err := age.DeobfHeader(obfEncryptedObf)
-	a.Nil(t, err)
+	r.NoError(t, err)
 	a.True(t, bytes.Contains(obfEncryptedDeObf, []byte("age-encryption.org/")))
-	a.Equal(t, obfEncryptedDeObf, obfEncrypted)
+	r.Equal(t, obfEncryptedDeObf, obfEncrypted)
 
 	decrypted, err := obfKeychain.Decrypt(obfEncrypted, false, false)
-	a.Nil(t, err)
+	r.NoError(t, err)
 
-	a.Equal(t, obfTestString, decrypted)
+	r.Equal(t, obfTestString, decrypted)
 }

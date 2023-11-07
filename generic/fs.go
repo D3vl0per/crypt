@@ -23,7 +23,7 @@ func SecureDelete(targetPath string, cycle int) error {
 	}
 
 	zeroBytes := make([]byte, fileInfo.Size())
-	copy(zeroBytes[:], "0")
+	copy(zeroBytes, "0")
 
 	for i := 0; i < cycle; i++ {
 		// Owerwrite with zeros
@@ -81,7 +81,7 @@ func SecureOverwrite(targetPath string, data []byte, cycle int) error {
 	}
 
 	zeroBytes := make([]byte, fileInfo.Size())
-	copy(zeroBytes[:], "0")
+	copy(zeroBytes, "0")
 
 	for i := 0; i < cycle; i++ {
 		// Owerwrite with zeros
@@ -161,4 +161,3 @@ func ReadFileContent(path string) ([]byte, error) {
 	}
 	return data, nil
 }
-
