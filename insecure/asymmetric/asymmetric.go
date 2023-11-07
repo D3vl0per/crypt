@@ -22,7 +22,7 @@ func GenerateBoxKeypair() (keypairs, error) {
 	if err != nil {
 		return keypairs{}, nil
 	}
-	
+
 	return keypairs{
 		PK: pk[:],
 		SK: sk[:],

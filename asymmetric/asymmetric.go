@@ -6,7 +6,6 @@ import (
 	"errors"
 	"strconv"
 
-
 	"github.com/D3vl0per/crypt/generic"
 	"github.com/cloudflare/circl/sign/ed448"
 )

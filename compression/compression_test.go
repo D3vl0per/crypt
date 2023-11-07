@@ -29,13 +29,13 @@ func TestGzipWrongLevel(t *testing.T) {
 }
 
 func TestZstdEndToEnd(t *testing.T) {
-	modes := []int{11, 7, 3, 1}	
+	modes := []int{11, 7, 3, 1}
 	test := map[int][]byte{
 		0: []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t"),
 		1: []byte("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		2: []byte("10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010"),
 	}
-	for datai, data := range test{
+	for datai, data := range test {
 		for _, elem := range modes {
 
 			// Compression with ZstdCompress function
@@ -45,11 +45,11 @@ func TestZstdEndToEnd(t *testing.T) {
 			var compressedBuff bytes.Buffer
 			var decompressedBuff bytes.Buffer
 			reader := bytes.NewReader(data)
-			
+
 			// Compression with ZstdCompressStream function
 			err = compression.ZstdCompressStream(reader, &compressedBuff, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(elem)))
 			r.NoError(t, err)
-			
+
 			// Compression cross-check (ZstdCompress and ZstdCompressStream)
 			r.Equal(t, compressed, compressedBuff.Bytes())
 
@@ -59,7 +59,7 @@ func TestZstdEndToEnd(t *testing.T) {
 			t.Log("Compression mode: ", elem)
 			t.Log("---")
 			compressedReader := bytes.NewReader(compressedBuff.Bytes())
-			
+
 			// Decompress with ZstdDecompress function
 			decompressed, err := compression.ZstdDecompress(compressed)
 			r.NoError(t, err)
@@ -67,7 +67,7 @@ func TestZstdEndToEnd(t *testing.T) {
 			// Decompress with ZstdStream function
 			err = compression.ZstdDecompressStream(compressedReader, &decompressedBuff)
 			r.NoError(t, err)
-			
+
 			// Decompression cross-check (ZstdCompress and ZstdCompressStream)
 			r.Equal(t, decompressed, decompressedBuff.Bytes())
 
@@ -80,7 +80,7 @@ func TestZstdEndToEnd(t *testing.T) {
 
 func TestZstdWrongLevel(t *testing.T) {
 	data := []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t")
-	
+
 	reader := bytes.NewReader(data)
 	var compressedBuff bytes.Buffer
 
@@ -90,7 +90,7 @@ func TestZstdWrongLevel(t *testing.T) {
 
 func TestZstdWrongConcurrency(t *testing.T) {
 	data := []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t")
-	
+
 	reader := bytes.NewReader(data)
 	var compressedBuff bytes.Buffer
 
@@ -99,10 +99,10 @@ func TestZstdWrongConcurrency(t *testing.T) {
 }
 
 func TestZstdWrongDecompressData(t *testing.T) {
-	
+
 	data, err := generic.CSPRNG(16)
 	r.NoError(t, err)
-	
+
 	reader := bytes.NewReader(data)
 	var compressedBuff bytes.Buffer
 

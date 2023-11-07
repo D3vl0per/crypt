@@ -41,39 +41,39 @@ func ExportECCSK(sk ed25519.PrivateKey) (string, error) {
 }
 
 func ImportECCPK(pk string) (ed25519.PublicKey, error) {
-	pk_pem, err := hex.DecodeString(pk)
+	pkPem, err := hex.DecodeString(pk)
 	if err != nil {
 		return ed25519.PublicKey{}, err
 	}
 
-	pemBlock, _ := pem.Decode(pk_pem)
+	pemBlock, _ := pem.Decode(pkPem)
 
-	pk_raw, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
+	pkRaw, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
 	if err != nil {
 		return ed25519.PublicKey{}, err
 	}
-
-	pk_c := pk_raw.(crypto.PublicKey)
-
-	return pk_c.(ed25519.PublicKey), nil
+	// nolint:errcheck
+	pkC := pkRaw.(crypto.PublicKey)
+	// nolint:errcheck
+	return pkC.(ed25519.PublicKey), nil
 }
 
 func ImportECCSK(sk string) (ed25519.PublicKey, error) {
-	sk_pem, err := hex.DecodeString(sk)
+	skPem, err := hex.DecodeString(sk)
 	if err != nil {
 		return ed25519.PublicKey{}, err
 	}
 
-	pemBlock, _ := pem.Decode(sk_pem)
+	pemBlock, _ := pem.Decode(skPem)
 
-	pk_raw, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
+	pkRaw, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
 	if err != nil {
 		return ed25519.PublicKey{}, err
 	}
-
-	pk_c := pk_raw.(crypto.PublicKey)
-
-	return pk_c.(ed25519.PublicKey), nil
+	// nolint:errcheck
+	pkC := pkRaw.(crypto.PublicKey)
+	// nolint:errcheck
+	return pkC.(ed25519.PublicKey), nil
 }
 
 func AllZero(s []byte) bool {

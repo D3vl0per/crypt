@@ -41,9 +41,9 @@ func GzipDecompress(src []byte) ([]byte, error) {
 func ZstdCompress(raw []byte, options ...zstd.EOption) ([]byte, error) {
 	reader := bytes.NewReader(raw)
 	var compressedBuff bytes.Buffer
-	
+
 	err := ZstdCompressStream(reader, &compressedBuff, options...)
-	if err != nil{
+	if err != nil {
 		return []byte{}, nil
 	}
 
@@ -66,9 +66,9 @@ func ZstdCompressStream(in io.Reader, out io.Writer, options ...zstd.EOption) er
 func ZstdDecompress(compressed []byte) ([]byte, error) {
 	reader := bytes.NewReader(compressed)
 	var deCompressedBuff bytes.Buffer
-	
+
 	err := ZstdDecompressStream(reader, &deCompressedBuff)
-	if err != nil{
+	if err != nil {
 		return []byte{}, nil
 	}
 
