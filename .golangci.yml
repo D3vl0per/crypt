@@ -26,6 +26,6 @@ linters-settings:
     config:
       global:
         nosec: true
-        "#nosec": "#do-not-chech-gosec"
+        "#nosec": "#do-not-check-gosec"
         show-ignored: true
         audit: true

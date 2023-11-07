@@ -6,10 +6,10 @@ go-lint:
 go-sec:
 	gosec -no-fail ./...
 
-go-test:
-	go test ./...
+test:
+	go test -cover ./...
 
-go-test-v:
+test-v:
 	go test ./... -v
 
 lint-install: golangci-lint-install gosec-install
@@ -24,3 +24,4 @@ coverage:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
 	rm coverage.out
+	google-chrome-stable coverage.html

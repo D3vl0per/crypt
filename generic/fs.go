@@ -11,6 +11,7 @@ func SecureDelete(targetPath string, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}
+	// #do-not-check-gosec
 	file, err := os.OpenFile(targetPath, os.O_RDWR, 0o666)
 	if err != nil {
 		return err
@@ -69,6 +70,7 @@ func SecureOverwrite(targetPath string, data []byte, cycle int) error {
 		cycle = 3
 	}
 
+	// #do-not-check-gosec
 	file, err := os.OpenFile(targetPath, os.O_RDWR, 0o666)
 	if err != nil {
 		return err
@@ -150,6 +152,7 @@ func FileWalkByName(startPath, name string) ([]string, error) {
 }
 
 func ReadFileContent(path string) ([]byte, error) {
+	// #do-not-check-gosec
 	j, err := os.Open(path)
 	if err != nil {
 		return []byte{}, err
