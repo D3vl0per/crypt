@@ -57,7 +57,7 @@ func ZstdCompressStream(in io.Reader, out io.Writer, options ...zstd.EOption) er
 	}
 	_, err = io.Copy(enc, in)
 	if err != nil {
-		enc.Close()
+		_ = enc.Close()
 		return err
 	}
 	return enc.Close()

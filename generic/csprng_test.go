@@ -27,7 +27,7 @@ func TestCSPRNGHex(t *testing.T) {
 		rndHexByte, err := hex.DecodeString(rndHex)
 		r.NoError(t, err)
 
-		r.Equal(t, len(rndHexByte), i)
+		r.Len(t, rndHexByte, i)
 	}
 }
 

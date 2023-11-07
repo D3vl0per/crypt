@@ -6,10 +6,10 @@ go-lint:
 go-sec:
 	gosec -no-fail ./...
 
-go-test:
-	go test ./...
+test:
+	go test -cover ./...
 
-go-test-v:
+test-v:
 	go test ./... -v
 
 lint-install: golangci-lint-install gosec-install
