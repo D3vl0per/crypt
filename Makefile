@@ -19,3 +19,8 @@ golangci-lint-install:
 
 gosec-install:
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	rm coverage.out
