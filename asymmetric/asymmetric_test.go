@@ -33,7 +33,7 @@ func TestGenerateEd25519KeypairFromSeed(t *testing.T) {
 	expectedSk, err := GenerateEd25519KeypairFromSeed(rng)
 	r.NoError(t, err)
 
-	r.Equal(t, expectedSk,sk)
+	r.Equal(t, expectedSk, sk)
 }
 
 func TestE2EEEd25519SignVerify(t *testing.T) {

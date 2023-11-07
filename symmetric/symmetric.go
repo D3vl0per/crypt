@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/D3vl0per/crypt/age"
+	"github.com/D3vl0per/crypt/aged"
 	"github.com/D3vl0per/crypt/generic"
 	"golang.org/x/crypto/chacha20poly1305"
 )
@@ -108,7 +108,7 @@ func streamWriter(dst io.Writer, key []byte) (io.WriteCloser, error) {
 		return nil, err
 	}
 
-	return age.NewWriter(age.StreamKey(key, nonce), dst)
+	return aged.NewWriter(aged.StreamKey(key, nonce), dst)
 }
 
 func DecryptStreamXChacha20Custom(in io.Reader, out io.Writer, key []byte) (err error) {
@@ -133,5 +133,5 @@ func streamReader(src io.Reader, key []byte) (io.Reader, error) {
 		return nil, errors.New("failed to read nonce")
 	}
 
-	return age.NewReader(age.StreamKey(key, nonce), src)
+	return aged.NewReader(aged.StreamKey(key, nonce), src)
 }

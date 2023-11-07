@@ -4,8 +4,8 @@ import (
 	"crypto/aes"
 	"errors"
 
-	"golang.org/x/crypto/nacl/secretbox"
 	"github.com/D3vl0per/crypt/generic"
+	"golang.org/x/crypto/nacl/secretbox"
 )
 
 func EncryptSecretBox(secret, plaintext []byte) ([]byte, error) {
@@ -46,8 +46,11 @@ func DecryptSecretBox(secret, ciphertext []byte) ([]byte, error) {
 	return decrypted, nil
 }
 
-func EncryptAESCTR(key, data []byte) ([]byte){
-	cipher, _ := aes.NewCipher(key)
+func EncryptAESCTR(key, data []byte) ([]byte, error) {
+	cipher, err := aes.NewCipher(key)
+	if err != nil {
+		return []byte{}, err
+	}
 	decrypted := make([]byte, len(data))
 	size := 16
 
@@ -55,11 +58,14 @@ func EncryptAESCTR(key, data []byte) ([]byte){
 		cipher.Decrypt(decrypted[bs:be], data[bs:be])
 	}
 
-	return decrypted
+	return decrypted, nil
 }
 
-func DecryptAESCTR(data, key []byte) []byte {
-	cipher, _ := aes.NewCipher([]byte(key))
+func DecryptAESCTR(data, key []byte) ([]byte, error) {
+	cipher, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return []byte{}, err
+	}
 	decrypted := make([]byte, len(data))
 	size := 16
 
@@ -67,5 +73,5 @@ func DecryptAESCTR(data, key []byte) []byte {
 		cipher.Decrypt(decrypted[bs:be], data[bs:be])
 	}
 
-	return decrypted
+	return decrypted, nil
 }

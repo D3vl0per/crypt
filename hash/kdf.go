@@ -81,8 +81,7 @@ func HKDFBase(secret, salt, msg []byte) ([]byte, error) {
 
 	key := make([]byte, HKDFKeysize)
 
-	_, err := io.ReadFull(kdf, key)
-	if err != nil {
+	if _, err := io.ReadFull(kdf, key); err != nil {
 		return []byte{}, err
 	}
 	return key, nil
