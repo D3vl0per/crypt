@@ -32,6 +32,9 @@ func SetupKeychain(keychainSetup KeychainSetup) (Keychain, error) {
 	keychain.secretKey = identity
 
 	for _, e := range keychainSetup.PublicKeys {
+		if e == "" {
+			continue
+		}
 		if identity.Recipient().String() != e {
 			publicKey, err := age.ParseX25519Recipient(e)
 			if err != nil {
@@ -92,7 +95,6 @@ func (k Keychain) Decrypt(p Parameters) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-
 	r, err := age.Decrypt(bytes.NewReader(cipherData), k.secretKey)
 	if err != nil {
 		return []byte{}, err
@@ -102,7 +104,7 @@ func (k Keychain) Decrypt(p Parameters) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	return decompressor(p)
+	return decompressor(p, out.Bytes())
 }
 
 func EncryptWithPwd(p Parameters, pwd string) ([]byte, error) {
@@ -157,17 +159,17 @@ func DecryptWithPwd(p Parameters, pwd string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	return decompressor(p)
+	return decompressor(p, out.Bytes())
 }
 
 func compressor(p Parameters) (*bytes.Reader, error) {
 	var in *bytes.Reader
 
 	if p.Compress {
-		var writer *bytes.Buffer
+		var writer bytes.Buffer
 		compressorIn := bytes.NewReader(p.Data)
 
-		err := p.Compressor.CompressStream(compressorIn, writer)
+		err := p.Compressor.CompressStream(compressorIn, &writer)
 		if err != nil {
 			return nil, err
 		}
@@ -180,15 +182,15 @@ func compressor(p Parameters) (*bytes.Reader, error) {
 	return in, nil
 }
 
-func decompressor(p Parameters) ([]byte, error) {
+func decompressor(p Parameters, data []byte) ([]byte, error) {
 	if p.Compress {
-		raw, err := p.Compressor.Decompress(p.Data)
+		raw, err := p.Compressor.Decompress(data)
 		if err != nil {
 			return []byte{}, err
 		}
 		return raw, nil
 	}
-	return p.Data, nil
+	return data, nil
 }
 
 func obfuscator(p Parameters, in []byte) ([]byte, error) {
@@ -217,7 +219,7 @@ func deobfuscator(p Parameters) ([]byte, error) {
 }
 
 func (k Keychain) KeychainExport() []string {
-	keys := make([]string, len(k.recipients))
+	var keys []string
 	for _, key := range k.recipients {
 		keys = append(keys, fmt.Sprint(key))
 	}

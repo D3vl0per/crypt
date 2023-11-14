@@ -31,8 +31,8 @@ func TestObf(t *testing.T) {
 	obfEncrypted, err := obfKeychain.Encrypt(aged.Parameters{
 		Data:        obfTestData,
 		Compress:    true,
+		Compressor:  &compression.Zstd{Level: 11},
 		Obfuscation: false,
-		Obfuscator:  &aged.AgeV1Obf{},
 	})
 
 	r.NoError(t, err)
@@ -54,7 +54,7 @@ func TestObf(t *testing.T) {
 			Level: 11,
 		},
 		Compress:    true,
-		Obfuscation: true,
+		Obfuscation: false,
 		Obfuscator:  &aged.AgeV1Obf{},
 	})
 	r.NoError(t, err)

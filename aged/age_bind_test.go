@@ -69,6 +69,38 @@ func keychainInit(t *testing.T) chains {
 	}
 }
 
+
+func TestGenKeypair(t *testing.T) {
+	_, err := aged.GenKeypair()
+	r.NoError(t, err)
+}
+
+func TestKeychain(t *testing.T) {
+	identity, err := aged.GenKeypair()
+	r.NoError(t, err)
+	a.Len(t, identity.Recipient().String(), 62)
+	a.Len(t, identity.String(), 74)
+}
+
+func TestKeychainImportExport(t *testing.T) {
+	keychain := keychainInit(t)
+
+	s := aged.KeychainSetup{
+		SecretKey:     keychain.keychain.KeychainExportSecretKey(),
+		PublicKeys:    keychain.keychain.KeychainExport(),
+		SelfRecipient: true,
+	}
+
+	t.Log("Public Keys: ", s.PublicKeys)
+	t.Log("Secret Key: ", s.SecretKey)
+
+	keychainExpected, err := aged.SetupKeychain(s)
+	r.NoError(t, err)
+
+	r.Equal(t, keychain.keychain.KeychainExportSecretKey(), keychainExpected.KeychainExportSecretKey())
+	r.Equal(t, keychain.keychain.KeychainExport(), keychainExpected.KeychainExport())
+}
+
 func TestRoundTrips(t *testing.T) {
 	config := keychainInit(t)
 
@@ -279,33 +311,7 @@ func TestRoundTrips(t *testing.T) {
 		r.Equal(t, plainData, decryptedData)
 	}
 */
-func TestGenKeypair(t *testing.T) {
-	_, err := aged.GenKeypair()
-	r.NoError(t, err)
-}
 
-func TestKeychainImportExport(t *testing.T) {
-	keychain := keychainInit(t)
 
-	s := aged.KeychainSetup{
-		SecretKey:     keychain.keychain.KeychainExportSecretKey(),
-		PublicKeys:    keychain.keychain.KeychainExport(),
-		SelfRecipient: true,
-	}
 
-	t.Log("Public Keys: ", s.PublicKeys)
-	t.Log("Secret Key: ", s.SecretKey)
 
-	keychainExpected, err := aged.SetupKeychain(s)
-	r.NoError(t, err)
-
-	r.Equal(t, keychain.keychain.KeychainExportSecretKey(), keychainExpected.KeychainExportSecretKey())
-	r.Equal(t, keychain.keychain.KeychainExport(), keychainExpected.KeychainExport())
-}
-
-func TestKeychain(t *testing.T) {
-	identity, err := aged.GenKeypair()
-	r.NoError(t, err)
-	a.Len(t, identity.Recipient().String(), 62)
-	a.Len(t, identity.String(), 74)
-}

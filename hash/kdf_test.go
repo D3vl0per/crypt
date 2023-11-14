@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
-	"github.com/D3vl0per/crypt/hash"
+	hasher "github.com/D3vl0per/crypt/hash"
 	a "github.com/stretchr/testify/assert"
 	r "github.com/stretchr/testify/require"
 )
@@ -13,7 +13,7 @@ func TestArgon2ID(t *testing.T) {
 	data := []byte("Correct Horse Battery Staple")
 	salt, err := generic.CSPRNG(16)
 	r.NoError(t, err)
-	argon := []hash.Argon2ID{
+	argon := []hasher.Argon2ID{
 		{},
 		{
 			Memory: 2 * 64 * 1024,

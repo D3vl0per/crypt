@@ -3,12 +3,16 @@ package hash
 import (
 	"encoding/base64"
 	"errors"
+	"hash"
+	"io"
 	"math"
 	"regexp"
 	"strconv"
 
 	"github.com/D3vl0per/crypt/generic"
 	"golang.org/x/crypto/argon2"
+	"golang.org/x/crypto/hkdf"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -22,6 +26,13 @@ const (
 type Kdf interface {
 	Hash([]byte) (string, error)
 	Validate([]byte, string) (bool, error)
+}
+
+type Hkdf struct {
+	Salt     []byte
+	Key   []byte
+	HashMode func() hash.Hash
+	Encoder generic.Hex
 }
 
 type Argon2ID struct {
@@ -139,68 +150,6 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 	return generic.Compare(hashed.Hash, providedHash), nil
 }
 
-/*
-	type Hkdf struct {
-		Salt []byte
-		Secret []byte
-		HashMode   func() hash.Hash
-	}
-
-// Easy to user HKDF toolset.
-
-	func (h *Hkdf) Hash(data []byte) ([]byte, error) {
-		kdf := hkdf.New(h.HashMode, h.Secret, h.Salt, data)
-
-		key := make([]byte, HKDFKeysize)
-
-		if _, err := io.ReadFull(kdf, key); err != nil {
-			return []byte{}, err
-		}
-		return key, nil
-	}
-
-	func HKDFRecreate(secret, msg []byte, salt string) ([]byte, error) {
-		salt_raw, err := hex.DecodeString(salt)
-		if err != nil {
-			return []byte{}, err
-		}
-
-		return HKDFBase(secret, salt_raw, msg)
-	}
-
-	func HKDF(secret, msg []byte) (keys, error) {
-		hash := sha256.New
-		salt, err := generic.CSPRNG(int64(hash().Size()))
-		if err != nil {
-			return keys{}, err
-		}
-
-		key, err := HKDFBase(secret, salt, msg)
-		if err != nil {
-			return keys{}, err
-		}
-
-		return keys{
-			Salt: hex.EncodeToString(salt),
-			Hash: hex.EncodeToString(key),
-		}, nil
-	}
-
-	func HKDFVerify(secret, msg []byte, salt, hash string) (bool, error) {
-		hash_to_validate, err := HKDFRecreate(secret, msg, salt)
-		if err != nil {
-			return false, err
-		}
-
-		hash_raw, err := hex.DecodeString(hash)
-		if err != nil {
-			return false, err
-		}
-
-		return generic.Compare(hash_raw, hash_to_validate), nil
-	}
-*/
-
 func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
 	pattern := `\$(argon2id)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$`
 
@@ -240,3 +189,60 @@ func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
 
 	return parameters, nil
 }
+
+func (h *Hkdf) Hash(data []byte) (string, error) {
+	if h.Salt != nil {
+		if len(h.Salt) != h.HashMode().Size() {
+			return "", errors.New(generic.StrCnct([]string{"salt must be", strconv.Itoa(h.HashMode().Size()), " byte long"}...))
+		}
+	} else {
+		var err error
+		h.Salt, err = generic.CSPRNG(int64(h.HashMode().Size()))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if h.HashMode == nil {
+		h.HashMode = sha3.New512
+	}
+
+	kdf := hkdf.New(h.HashMode, h.Key , h.Salt, data)
+
+	key := make([]byte, HKDFKeysize)
+
+	if _, err := io.ReadFull(kdf, key); err != nil {
+		return "", err
+	}
+	 
+	return generic.StrCnct([]string{h.Encoder.Encode(key), "#", h.Encoder.Encode(h.Salt), }...), nil
+}
+
+func (h *Hkdf) Validate(data []byte, hash string) (bool, error) {
+
+	if len(h.Salt) == 0 || len(h.Salt) != h.HashMode().Size() {
+		return false, errors.New(generic.StrCnct([]string{"salt must be ", strconv.Itoa(h.HashMode().Size()), " byte long"}...))
+	}
+
+	if h.HashMode == nil {
+		h.HashMode = sha3.New512
+	}
+
+	kdf := hkdf.New(h.HashMode, h.Key , h.Salt, data)
+
+	key := make([]byte, HKDFKeysize)
+
+	if _, err := io.ReadFull(kdf, key); err != nil {
+		return false, err
+	}
+	
+
+	hash_raw, err := h.Encoder.Decode(hash)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hash_raw, h.Salt), nil
+	//return generic.Compare(hash_raw, hash_to_validate), nil
+}
+
