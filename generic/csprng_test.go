@@ -31,6 +31,14 @@ func TestCSPRNGHex(t *testing.T) {
 	}
 }
 
+func TestHWRng(t *testing.T) {
+	length := 32
+	rnd, err := generic.HWRng(int64(length))
+	r.NoError(t, err)
+	r.Len(t, rnd, length)
+	t.Log(hex.EncodeToString(rnd))
+}
+
 func TestRand(t *testing.T) {
 	reader := generic.Rand()
 	r.Equal(t, reflect.TypeOf(reader), reflect.TypeOf(rand.Reader))

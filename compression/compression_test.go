@@ -6,96 +6,89 @@ import (
 
 	"github.com/D3vl0per/crypt/compression"
 	"github.com/D3vl0per/crypt/generic"
-	"github.com/klauspost/compress/zstd"
 
 	r "github.com/stretchr/testify/require"
 )
 
-func TestGzipCompress(t *testing.T) {
-	data := []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t")
+func TestGzipCompressRoundTrip(t *testing.T) {
+	data, err := generic.CSPRNG(256)
+	r.NoError(t, err)
+
 	for i := 0; i <= 9; i++ {
-		cmp, err := compression.GzipCompress(data, i)
+		gzip := compression.Gzip{
+			Level: i,
+		}
+		cmp, err := gzip.Compress(data)
 		r.NoError(t, err)
-		dcmp, err := compression.GzipDecompress(cmp)
+		dcmp, err := gzip.Decompress(cmp)
 		r.NoError(t, err)
 		r.Equal(t, data, dcmp)
 	}
 }
 
-func TestGzipWrongLevel(t *testing.T) {
-	data := []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t")
-	_, err := compression.GzipCompress(data, 10)
-	r.EqualError(t, err, "gzip: invalid compression level: 10")
-}
+func TestRoundTrips(t *testing.T) {
+	genericModes := []int{9, 1, 0, -1, -2}
+	zstdModes := []int{11, 7, 3, 1}
 
-func TestZstdEndToEnd(t *testing.T) {
-	modes := []int{11, 7, 3, 1}
 	test := map[int][]byte{
 		0: []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t"),
 		1: []byte("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
 		2: []byte("10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010"),
 	}
-	for datai, data := range test {
-		for _, elem := range modes {
-
-			// Compression with ZstdCompress function
-			compressed, err := compression.ZstdCompress(data, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(elem)))
-			r.NoError(t, err)
-
-			var compressedBuff bytes.Buffer
-			var decompressedBuff bytes.Buffer
-			reader := bytes.NewReader(data)
-
-			// Compression with ZstdCompressStream function
-			err = compression.ZstdCompressStream(reader, &compressedBuff, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(elem)))
-			r.NoError(t, err)
-
-			// Compression cross-check (ZstdCompress and ZstdCompressStream)
-			r.Equal(t, compressed, compressedBuff.Bytes())
-
-			t.Log("Data sample: ", datai)
-			t.Log("Orignal size: ", len(data))
-			t.Log("Compressed size: ", compressedBuff.Len())
-			t.Log("Compression mode: ", elem)
-			t.Log("---")
-			compressedReader := bytes.NewReader(compressedBuff.Bytes())
-
-			// Decompress with ZstdDecompress function
-			decompressed, err := compression.ZstdDecompress(compressed)
-			r.NoError(t, err)
-
-			// Decompress with ZstdStream function
-			err = compression.ZstdDecompressStream(compressedReader, &decompressedBuff)
-			r.NoError(t, err)
-
-			// Decompression cross-check (ZstdCompress and ZstdCompressStream)
-			r.Equal(t, decompressed, decompressedBuff.Bytes())
-
-			r.Len(t, decompressedBuff.Bytes(), len(data))
-			r.Equal(t, decompressedBuff.Bytes(), data)
+	for _, data := range test {
+		for _, level := range zstdModes {
+			testRoundTrip(t, &compression.Zstd{Level: level}, data)
 		}
-		t.Log("=============")
+	}
+
+	for _, data := range test {
+		for _, level := range genericModes {
+			testRoundTrip(t, &compression.Flate{Level: level}, data)
+			testRoundTrip(t, &compression.Zlib{Level: level}, data)
+			testRoundTrip(t, &compression.Gzip{Level: level}, data)
+		}
 	}
 }
 
-func TestZstdWrongLevel(t *testing.T) {
-	data := []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t")
+func testRoundTrip(t *testing.T, compressor compression.Compressor, data []byte) {
 
-	reader := bytes.NewReader(data)
+	// Compression with ZstdCompress function
+	compressed, err := compressor.Compress(data)
+	r.NoError(t, err)
+
 	var compressedBuff bytes.Buffer
-
-	err := compression.ZstdCompressStream(reader, &compressedBuff, zstd.WithEncoderLevel(12))
-	r.EqualError(t, err, "unknown encoder level")
-}
-
-func TestZstdWrongConcurrency(t *testing.T) {
-	data := []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t")
-
+	var decompressedBuff bytes.Buffer
 	reader := bytes.NewReader(data)
-	var compressedBuff bytes.Buffer
 
-	err := compression.ZstdCompressStream(reader, &compressedBuff, zstd.WithEncoderConcurrency(-1))
-	r.EqualError(t, err, "concurrency must be at least 1")
+	// Compression with ZstdCompressStream function
+	err = compressor.CompressStream(reader, &compressedBuff)
+	r.NoError(t, err)
+
+	// Compression cross-check (ZstdCompress and ZstdCompressStream)
+	r.Equal(t, compressed, compressedBuff.Bytes())
+
+	t.Log("Data sample: ", data[:16])
+	t.Log("Orignal size: ", len(data))
+	t.Log("Compressed size: ", compressedBuff.Len())
+	t.Log("Compression mode: ", compressor.GetLevel())
+	t.Log("---")
+	compressedReader := bytes.NewReader(compressedBuff.Bytes())
+
+	// Decompress with ZstdDecompress function
+	decompressed, err := compressor.Decompress(compressed)
+	r.NoError(t, err)
+
+	// Decompress with ZstdStream function
+	err = compressor.DecompressStream(compressedReader, &decompressedBuff)
+	r.NoError(t, err)
+
+	// Decompression cross-check (ZstdCompress and ZstdCompressStream)
+	r.Equal(t, decompressed, decompressedBuff.Bytes())
+
+	r.Len(t, decompressedBuff.Bytes(), len(data))
+	r.Equal(t, decompressedBuff.Bytes(), data)
+
+	t.Log("=============")
 }
 
 func TestZstdWrongDecompressData(t *testing.T) {
@@ -106,6 +99,10 @@ func TestZstdWrongDecompressData(t *testing.T) {
 	reader := bytes.NewReader(data)
 	var compressedBuff bytes.Buffer
 
-	err = compression.ZstdDecompressStream(reader, &compressedBuff)
+	compressor := compression.Zstd{
+		Level: 11,
+	}
+
+	err = compressor.DecompressStream(reader, &compressedBuff)
 	r.Error(t, err)
 }

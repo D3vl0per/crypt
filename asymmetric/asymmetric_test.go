@@ -1,25 +1,27 @@
-package crypt
+package asymmetric_test
 
 import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/D3vl0per/crypt/asymmetric"
 	"github.com/D3vl0per/crypt/generic"
 	a "github.com/stretchr/testify/assert"
 	r "github.com/stretchr/testify/require"
 )
 
 func TestGenerateEd25519Keypair(t *testing.T) {
-	pk, sk, err := GenerateEd25519Keypair()
+	asym := asymmetric.Ed25519{}
+	err := asym.Generate()
 	r.NoError(t, err)
-	a.Len(t, pk, 32, "generated key size not match")
-	a.Len(t, sk, 64, "generated key size not match")
-	r.NotEqual(t, pk, sk, "public and secret key are equal")
+	a.Len(t, asym.PublicKey, 32, "generated key size not match")
+	a.Len(t, asym.SecretKey, 64, "generated key size not match")
+	r.NotEqual(t, asym.PublicKey, asym.SecretKey, "public and secret key are equal")
 
-	t.Log("Ed25519 Secret Key:", sk)
-	t.Log("Ed25519 Secret Key Hex:", hex.EncodeToString(sk))
-	t.Log("Ed25519 Public Key:", pk)
-	t.Log("Ed25519 Public Key Hex:", hex.EncodeToString(pk))
+	t.Log("Ed25519 Secret Key:", asym.SecretKey)
+	t.Log("Ed25519 Secret Key Hex:", hex.EncodeToString(asym.SecretKey))
+	t.Log("Ed25519 Public Key:", asym.PublicKey)
+	t.Log("Ed25519 Public Key Hex:", hex.EncodeToString(asym.PublicKey))
 }
 
 // Deterministic key generation check.
@@ -27,25 +29,32 @@ func TestGenerateEd25519KeypairFromSeed(t *testing.T) {
 	rng, err := generic.CSPRNG(32)
 	r.NoError(t, err)
 
-	sk, err := GenerateEd25519KeypairFromSeed(rng)
+	asym := asymmetric.Ed25519{}
+
+	err = asym.GenerateFromSeed(rng)
 	r.NoError(t, err)
 
-	expectedSk, err := GenerateEd25519KeypairFromSeed(rng)
+	asym2 := asymmetric.Ed25519{}
+
+	err = asym2.GenerateFromSeed(rng)
 	r.NoError(t, err)
 
-	r.Equal(t, expectedSk, sk)
+	r.Equal(t, asym2.SecretKey, asym.SecretKey)
+	r.Equal(t, asym2.PublicKey, asym.PublicKey)
 }
 
 func TestE2EEEd25519SignVerify(t *testing.T) {
 	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
-	pk, sk, err := GenerateEd25519Keypair()
+	asym := asymmetric.Ed25519{}
+
+	err := asym.Generate()
 	r.NoError(t, err)
 
-	signature := SignEd25519(sk, msg)
+	signature := asym.Sign(msg)
 	r.NotEmpty(t, signature)
 
-	isValid, err := VerifyEd25519(pk, msg, signature)
+	isValid, err := asym.Verify(msg, signature)
 	r.NoError(t, err)
 	r.True(t, isValid)
 }
@@ -78,16 +87,17 @@ func TestKeyWrapping(t *testing.T) {
 */
 
 func TestGenerateEd448Keypair(t *testing.T) {
-	pk, sk, err := GenerateEd448Keypair()
+	asym := asymmetric.Ed448{}
+	err := asym.Generate()
 	r.NoError(t, err)
-	a.Len(t, pk, 57, "generated key size not match")
-	a.Len(t, sk, 114, "generated key size not match")
-	a.NotEqual(t, pk, sk, "public and secret key are equal")
+	a.Len(t, asym.PublicKey, 57, "generated key size not match")
+	a.Len(t, asym.SecretKey, 114, "generated key size not match")
+	a.NotEqual(t, asym.PublicKey, asym.SecretKey, "public and secret key are equal")
 
-	t.Log("Ed448 Secret Key:", sk)
-	t.Log("Ed448 Secret Key Hex:", hex.EncodeToString(sk))
-	t.Log("Ed448 Public Key:", pk)
-	t.Log("Ed448 Public Key Hex:", hex.EncodeToString(pk))
+	t.Log("Ed448 Secret Key:", asym.SecretKey)
+	t.Log("Ed448 Secret Key Hex:", hex.EncodeToString(asym.SecretKey))
+	t.Log("Ed448 Public Key:", asym.PublicKey)
+	t.Log("Ed448 Public Key Hex:", hex.EncodeToString(asym.PublicKey))
 }
 
 // Deterministic generation check.
@@ -95,25 +105,34 @@ func TestGenerateEd448KeypairFromSeed(t *testing.T) {
 	rng, err := generic.CSPRNG(57)
 	r.NoError(t, err)
 
-	sk, err := GenerateEd448KeypairFromSeed(rng)
+	asym := asymmetric.Ed448{}
+
+	err = asym.GenerateFromSeed(rng)
 	r.NoError(t, err)
 
-	expectedSk, err := GenerateEd448KeypairFromSeed(rng)
+	asym2 := asymmetric.Ed448{}
+
+	err = asym2.GenerateFromSeed(rng)
 	r.NoError(t, err)
 
-	r.Equal(t, expectedSk, sk)
+	r.Equal(t, asym2.SecretKey, asym.SecretKey)
+	r.Equal(t, asym2.PublicKey, asym.PublicKey)
 }
 
 func TestGenerateEd448KeypairFromSeedWithWrongSeedSize(t *testing.T) {
 	rng, err := generic.CSPRNG(32)
 	r.NoError(t, err)
 
-	_, err = GenerateEd448KeypairFromSeed(rng)
+	asym := asymmetric.Ed448{}
+
+	err = asym.GenerateFromSeed(rng)
 	r.EqualError(t, err, "seed size must be 57 bytes long")
 
 	rng, err = generic.CSPRNG(64)
 	r.NoError(t, err)
 
-	_, err = GenerateEd448KeypairFromSeed(rng)
+	asym2 := asymmetric.Ed448{}
+
+	err = asym2.GenerateFromSeed(rng)
 	r.EqualError(t, err, "seed size must be 57 bytes long")
 }

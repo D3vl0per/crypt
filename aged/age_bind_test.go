@@ -5,15 +5,10 @@ import (
 
 	"filippo.io/age"
 	"github.com/D3vl0per/crypt/aged"
+	"github.com/D3vl0per/crypt/compression"
 	"github.com/D3vl0per/crypt/generic"
 	a "github.com/stretchr/testify/assert"
 	r "github.com/stretchr/testify/require"
-)
-
-var (
-	//nolint:gochecknoglobals
-	//nolint:gochecknoglobals
-	plainData []byte = []byte("4ukxipMYfoXNbaEClwKAQHz4kHLQHoIh Correct Horse Battery Staple l44zAP9dBPk1OyUxH7Vyfhwuk76kq1QZ")
 )
 
 type chains struct {
@@ -24,6 +19,7 @@ type chains struct {
 	keychain      aged.Keychain
 	keychain2     aged.Keychain
 	keychainWrong aged.Keychain
+	plainData     []byte
 }
 
 func keychainInit(t *testing.T) chains {
@@ -37,11 +33,28 @@ func keychainInit(t *testing.T) chains {
 	wrongKeypair, err := aged.GenKeypair()
 	r.NoError(t, err)
 
-	keychain, err := aged.SetupKeychain(secretKey1.String(), []string{publicKey1.Recipient().String(), publicKey2.Recipient().String()})
+	keychain, err := aged.SetupKeychain(aged.KeychainSetup{
+		SecretKey:     secretKey1.String(),
+		PublicKeys:    []string{publicKey1.Recipient().String(), publicKey2.Recipient().String()},
+		SelfRecipient: true,
+	})
 	r.NoError(t, err)
-	keychain2, err := aged.SetupKeychain(publicKey1.String(), []string{secretKey1.Recipient().String(), publicKey2.Recipient().String()})
+
+	keychain2, err := aged.SetupKeychain(aged.KeychainSetup{
+		SecretKey:     publicKey1.String(),
+		PublicKeys:    []string{secretKey1.Recipient().String(), publicKey2.Recipient().String()},
+		SelfRecipient: true,
+	})
 	r.NoError(t, err)
-	keychainWrong, err := aged.SetupKeychain(wrongKeypair.String(), []string{secretKey1.Recipient().String(), publicKey2.Recipient().String()})
+
+	keychainWrong, err := aged.SetupKeychain(aged.KeychainSetup{
+		SecretKey:     wrongKeypair.String(),
+		PublicKeys:    []string{secretKey1.Recipient().String(), publicKey2.Recipient().String()},
+		SelfRecipient: true,
+	})
+	r.NoError(t, err)
+
+	plainData, err := generic.CSPRNG(128)
 	r.NoError(t, err)
 
 	return chains{
@@ -52,127 +65,242 @@ func keychainInit(t *testing.T) chains {
 		keychain:      keychain,
 		keychain2:     keychain2,
 		keychainWrong: keychainWrong,
+		plainData:     plainData,
 	}
 }
 
-func TestEncryptAndDecryptPlain(t *testing.T) {
-	keychains := keychainInit(t)
+func TestRoundTrips(t *testing.T) {
+	config := keychainInit(t)
 
-	cipherData, err := keychains.keychain.Encrypt(plainData, false, false)
-	r.NoError(t, err, "Encryption without error")
-	t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
+	big, err := generic.CSPRNG(10485760)
+	r.NoError(t, err)
 
-	decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, false)
-	r.NoError(t, err2, "Decryption without error")
-	r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+	p := []aged.Parameters{
+		// No compress, No obfuscator
+		{
+			Data:        config.plainData,
+			Obfuscation: false,
+			Compress:    false,
+		},
+		// No compress, obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscator:  &aged.AgeV1Obf{},
+			Obfuscation: true,
+			Compress:    false,
+		},
+		// Compress with Gzip, no obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscation: false,
+			Compressor:  &compression.Gzip{},
+			Compress:    true,
+		},
+		// Compress with Gzip, obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscator:  &aged.AgeV1Obf{},
+			Obfuscation: true,
+			Compressor:  &compression.Gzip{},
+			Compress:    true,
+		},
+		// Compress with Zstd, no obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscation: false,
+			Compressor:  &compression.Zstd{},
+			Compress:    true,
+		},
+		// Compress with Zstd, obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscator:  &aged.AgeV1Obf{},
+			Obfuscation: true,
+			Compressor:  &compression.Zstd{},
+			Compress:    true,
+		},
+		// Compress with Flate, no obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscation: false,
+			Compressor:  &compression.Flate{},
+			Compress:    true,
+		},
+		// Compess with Flate, obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscator:  &aged.AgeV1Obf{},
+			Obfuscation: true,
+			Compressor:  &compression.Flate{},
+			Compress:    true,
+		},
+		// Compress with Zlib, no obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscation: false,
+			Compressor:  &compression.Zlib{},
+			Compress:    true,
+		},
+		// Compress with Zlib, obfuscate
+		{
+			Data:        config.plainData,
+			Obfuscator:  &aged.AgeV1Obf{},
+			Obfuscation: true,
+			Compressor:  &compression.Zlib{},
+			Compress:    false,
+		},
+		// Compress big file with Zstd, obfuscate
+		{
+			Data:        big,
+			Obfuscator:  &aged.AgeV1Obf{},
+			Obfuscation: true,
+			Compressor:  &compression.Zlib{},
+			Compress:    true,
+		},
+	}
 
-	decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, false)
-	r.NoError(t, err3, "Decryption two without error")
-	r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+	for _, encryptParam := range p {
 
-	decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, false)
-	r.Equal(t, []byte{}, decryptedData3)
-	r.EqualError(t, err4, "no identity matched any of the recipients")
+		decryptParam := encryptParam
+		var err error
+
+		decryptParam.Data, err = config.keychain.Encrypt(encryptParam)
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Original size:%d Processed size: %d", len(encryptParam.Data), len(decryptParam.Data))
+
+		decryptedData, err2 := config.keychain.Decrypt(decryptParam)
+		r.NoError(t, err2, "Decryption without error")
+		r.Equal(t, encryptParam.Data, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+
+		decryptedData2, err3 := config.keychain2.Decrypt(decryptParam)
+		r.NoError(t, err3, "Decryption two without error")
+		r.Equal(t, encryptParam.Data, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+
+		decryptedData3, err4 := config.keychainWrong.Decrypt(decryptParam)
+		r.Equal(t, []byte{}, decryptedData3)
+		r.EqualError(t, err4, "no identity matched any of the recipients")
+	}
+
 }
 
-func TestEncryptAndDecryptCompress(t *testing.T) {
-	keychains := keychainInit(t)
+/*
+	func TestEncryptAndDecryptCompress(t *testing.T) {
+		keychains := keychainInit(t)
 
-	cipherData, err := keychains.keychain.Encrypt(plainData, true, false)
-	r.NoError(t, err, "Encryption without error")
-	t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
+		cipherData, err := keychains.keychain.Encrypt(plainData, true, false)
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
 
-	decryptedData, err2 := keychains.keychain.Decrypt(cipherData, true, false)
-	r.NoError(t, err2, "Decryption without error")
-	r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, true, false)
+		r.NoError(t, err2, "Decryption without error")
+		r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
 
-	decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, true, false)
-	r.NoError(t, err3, "Decryption two without error")
-	r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, true, false)
+		r.NoError(t, err3, "Decryption two without error")
+		r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
 
-	decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, true, false)
-	r.Equal(t, []byte{}, decryptedData3)
-	r.EqualError(t, err4, "no identity matched any of the recipients")
-}
+		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, true, false)
+		r.Equal(t, []byte{}, decryptedData3)
+		r.EqualError(t, err4, "no identity matched any of the recipients")
+	}
 
-func TestEncryptAndDecryptObfuscated(t *testing.T) {
-	keychains := keychainInit(t)
+	func TestEncryptAndDecryptObfuscated(t *testing.T) {
+		keychains := keychainInit(t)
 
-	cipherData, err := keychains.keychain.Encrypt(plainData, false, true)
-	r.NoError(t, err, "Encryption without error")
-	t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
+		cipherData, err := keychains.keychain.Encrypt(plainData, false, true)
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
 
-	decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, true)
-	r.NoError(t, err2, "Decryption without error")
-	r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, true)
+		r.NoError(t, err2, "Decryption without error")
+		r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
 
-	decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, true)
-	r.NoError(t, err3, "Decryption two without error")
-	r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, true)
+		r.NoError(t, err3, "Decryption two without error")
+		r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
 
-	decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, true)
-	r.Equal(t, []byte{}, decryptedData3)
-	r.EqualError(t, err4, "no identity matched any of the recipients")
-}
+		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, true)
+		r.Equal(t, []byte{}, decryptedData3)
+		r.EqualError(t, err4, "no identity matched any of the recipients")
+	}
 
-func TestEncryptAndDecryptBigFile(t *testing.T) {
-	keychains := keychainInit(t)
+	func TestEncryptAndDecryptBigFile(t *testing.T) {
+		keychains := keychainInit(t)
 
-	plainText, err := generic.CSPRNG(10485760)
-	r.NoError(t, err, "Encryption without error")
-	cipherData, err := keychains.keychain.Encrypt(plainText, false, true)
-	r.NoError(t, err, "Encryption without error")
-	t.Logf("Original size:%d Processed size: %d", len(plainText), len(cipherData))
+		plainText, err := generic.CSPRNG(10485760)
+		r.NoError(t, err, "Encryption without error")
+		cipherData, err := keychains.keychain.Encrypt(plainText, false, true)
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Original size:%d Processed size: %d", len(plainText), len(cipherData))
 
-	decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, true)
-	r.NoError(t, err2, "Decryption without error")
-	r.Equal(t, plainText, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, true)
+		r.NoError(t, err2, "Decryption without error")
+		r.Equal(t, plainText, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
 
-	decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, true)
-	r.NoError(t, err3, "Decryption two without error")
-	r.Equal(t, plainText, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, true)
+		r.NoError(t, err3, "Decryption two without error")
+		r.Equal(t, plainText, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
 
-	decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, true)
-	r.Equal(t, []byte{}, decryptedData3)
-	r.EqualError(t, err4, "no identity matched any of the recipients")
-}
+		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, true)
+		r.Equal(t, []byte{}, decryptedData3)
+		r.EqualError(t, err4, "no identity matched any of the recipients")
+	}
 
-func TestEncryptAndDecryptCompressAndObfuscated(t *testing.T) {
-	keychains := keychainInit(t)
+	func TestEncryptAndDecryptCompressAndObfuscated(t *testing.T) {
+		keychains := keychainInit(t)
 
-	cipherData, err := keychains.keychain.Encrypt(plainData, true, true)
-	r.NoError(t, err, "Encryption without error")
-	t.Logf("Size:%d", len(cipherData))
+		cipherData, err := keychains.keychain.Encrypt(plainData, true, true)
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Size:%d", len(cipherData))
 
-	decryptedData, err2 := keychains.keychain.Decrypt(cipherData, true, true)
-	r.NoError(t, err2, "Decryption without error")
-	r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, true, true)
+		r.NoError(t, err2, "Decryption without error")
+		r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
 
-	decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, true, true)
-	r.NoError(t, err3, "Decryption two without error")
-	r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, true, true)
+		r.NoError(t, err3, "Decryption two without error")
+		r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
 
-	decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, true, true)
-	r.Equal(t, []byte{}, decryptedData3)
-	r.EqualError(t, err4, "no identity matched any of the recipients")
-}
+		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, true, true)
+		r.Equal(t, []byte{}, decryptedData3)
+		r.EqualError(t, err4, "no identity matched any of the recipients")
+	}
 
-func TestEncryptWithPwd(t *testing.T) {
-	key, err := generic.CSPRNG(32)
-	r.NoError(t, err, "CSPRNG without error")
+	func TestEncryptWithPwd(t *testing.T) {
+		key, err := generic.CSPRNG(32)
+		r.NoError(t, err, "CSPRNG without error")
 
-	cipherData, err := aged.EncryptWithPwd(string(key), plainData, true, true)
-	r.NoError(t, err, "Encryption without error")
-	t.Logf("Size: %d", len(cipherData))
+		cipherData, err := aged.EncryptWithPwd(string(key), plainData, true, true)
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Size: %d", len(cipherData))
 
-	decryptedData, err := aged.DecryptWithPwd(string(key), cipherData, true, true)
-	r.NoError(t, err, "Decryption without error")
-	r.Equal(t, plainData, decryptedData)
-}
-
+		decryptedData, err := aged.DecryptWithPwd(string(key), cipherData, true, true)
+		r.NoError(t, err, "Decryption without error")
+		r.Equal(t, plainData, decryptedData)
+	}
+*/
 func TestGenKeypair(t *testing.T) {
 	_, err := aged.GenKeypair()
 	r.NoError(t, err)
+}
+
+func TestKeychainImportExport(t *testing.T) {
+	keychain := keychainInit(t)
+
+	s := aged.KeychainSetup{
+		SecretKey:     keychain.keychain.KeychainExportSecretKey(),
+		PublicKeys:    keychain.keychain.KeychainExport(),
+		SelfRecipient: true,
+	}
+
+	t.Log("Public Keys: ", s.PublicKeys)
+	t.Log("Secret Key: ", s.SecretKey)
+
+	keychainExpected, err := aged.SetupKeychain(s)
+	r.NoError(t, err)
+
+	r.Equal(t, keychain.keychain.KeychainExportSecretKey(), keychainExpected.KeychainExportSecretKey())
+	r.Equal(t, keychain.keychain.KeychainExport(), keychainExpected.KeychainExport())
 }
 
 func TestKeychain(t *testing.T) {

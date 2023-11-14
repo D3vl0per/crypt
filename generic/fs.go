@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func SecureDelete(targetPath string, cycle int) error {
+func Delete(targetPath string, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}
@@ -65,7 +65,7 @@ func SecureDelete(targetPath string, cycle int) error {
 	return nil
 }
 
-func SecureOverwrite(targetPath string, data []byte, cycle int) error {
+func Overwrite(targetPath string, data []byte, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}

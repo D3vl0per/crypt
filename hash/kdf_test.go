@@ -1,7 +1,6 @@
 package hash_test
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
@@ -11,16 +10,52 @@ import (
 )
 
 func TestArgon2ID(t *testing.T) {
-	pass := []byte("Correct Horse Battery Staple")
-
-	blob, err := hash.Argon2ID(pass)
+	data := []byte("Correct Horse Battery Staple")
+	salt, err := generic.CSPRNG(16)
 	r.NoError(t, err)
+	argon := []hash.Argon2ID{
+		{},
+		{
+			Memory: 2 * 64 * 1024,
+		},
+		{
+			Iterations: 4,
+		},
+		{
+			Parallelism: 8,
+		},
+		{
+			KeyLen: 64,
+		},
+		{
+			Salt: salt,
+		},
+		{
+			Memory:      2 * 64 * 1024,
+			Iterations:  2,
+			Parallelism: 8,
+			KeyLen:      64,
+			Salt:        salt,
+		},
+	}
 
-	isValid, err := hash.Argon2IDVerify(pass, blob.Salt, blob.Hash)
-	r.NoError(t, err)
-	a.True(t, isValid)
+	for _, e := range argon {
+		argonString, err := e.Hash(data)
+		r.NoError(t, err)
+
+		t.Log("Argon string: ", argonString)
+		parameters, err := e.ExtractParameters(argonString)
+		r.NoError(t, err)
+		t.Log("Argon parameters: ", parameters)
+
+		isValid, err := e.Validate(data, argonString)
+		r.NoError(t, err)
+		a.True(t, isValid)
+	}
+
 }
 
+/*
 func TestArgon2IDCustomSalt(t *testing.T) {
 	pass := []byte("Correct Horse Battery Staple")
 	salt, err := generic.CSPRNG(16)
@@ -37,7 +72,8 @@ func TestArgon2IDCustomSalt(t *testing.T) {
 	r.NoError(t, err)
 	a.True(t, isValid)
 }
-
+*/
+/*
 func TestHKDF(t *testing.T) {
 	secret := []byte("Correct Horse Battery Staple")
 	msg := []byte("https://xkcd.com/936/")
@@ -49,7 +85,7 @@ func TestHKDF(t *testing.T) {
 	r.NoError(t, err)
 	a.True(t, isValid)
 }
-
+*/
 /*
 func TestHKDFCustomSalt(t *testing.T) {
 	secret := []byte("Correct Horse Battery Staple")

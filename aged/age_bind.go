@@ -3,6 +3,7 @@ package aged
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 
 	"filippo.io/age"
@@ -14,22 +15,34 @@ type Keychain struct {
 	recipients []age.Recipient
 }
 
-func SetupKeychain(secretKey string, publicKeys []string) (Keychain, error) {
+type KeychainSetup struct {
+	SecretKey     string
+	PublicKeys    []string
+	SelfRecipient bool
+}
+
+func SetupKeychain(keychainSetup KeychainSetup) (Keychain, error) {
 	var keychain Keychain
 
-	identity, err := age.ParseX25519Identity(secretKey)
+	identity, err := age.ParseX25519Identity(keychainSetup.SecretKey)
 	if err != nil {
 		return Keychain{}, err
 	}
-	keychain.secretKey = identity
-	keychain.recipients = append(keychain.recipients, identity.Recipient())
 
-	for _, e := range publicKeys {
-		publicKey, err := age.ParseX25519Recipient(e)
-		if err != nil {
-			return Keychain{}, err
+	keychain.secretKey = identity
+
+	for _, e := range keychainSetup.PublicKeys {
+		if identity.Recipient().String() != e {
+			publicKey, err := age.ParseX25519Recipient(e)
+			if err != nil {
+				return Keychain{}, err
+			}
+			keychain.recipients = append(keychain.recipients, publicKey)
 		}
-		keychain.recipients = append(keychain.recipients, publicKey)
+	}
+
+	if keychainSetup.SelfRecipient {
+		keychain.recipients = append(keychain.recipients, identity.Recipient())
 	}
 
 	return keychain, nil
@@ -43,16 +56,19 @@ func GenKeypair() (*age.X25519Identity, error) {
 	return identity, nil
 }
 
-func (k Keychain) Encrypt(data []byte, compress bool, header bool) ([]byte, error) {
-	var reader *bytes.Reader
-	if compress {
-		raw, err := compression.GzipCompress(data, 6)
-		if err != nil {
-			return []byte{}, err
-		}
-		reader = bytes.NewReader(raw)
-	} else {
-		reader = bytes.NewReader(data)
+type Parameters struct {
+	Data        []byte
+	Compressor  compression.Compressor
+	Compress    bool
+	Obfuscation bool
+	Obfuscator  Obfuscation
+}
+
+func (k Keychain) Encrypt(p Parameters) ([]byte, error) {
+
+	in, err := compressor(p)
+	if err != nil {
+		return []byte{}, err
 	}
 
 	out := &bytes.Buffer{}
@@ -61,37 +77,23 @@ func (k Keychain) Encrypt(data []byte, compress bool, header bool) ([]byte, erro
 		return []byte{}, err
 	}
 
-	if err != nil {
-		return []byte{}, err
-	}
-
-	if _, err := io.Copy(w, reader); err != nil {
+	if _, err := io.Copy(w, in); err != nil {
 		return []byte{}, err
 	}
 	if err := w.Close(); err != nil {
 		return []byte{}, err
 	}
 
-	if header {
-		obf, err := ObfHeader(out.Bytes())
-		if err != nil {
-			return []byte{}, errors.New("failed to obfuscate header")
-		}
-		return obf, nil
-	}
-	return out.Bytes(), nil
+	return obfuscator(p, out.Bytes())
 }
 
-func (k Keychain) Decrypt(cipherdata []byte, compress bool, header bool) ([]byte, error) {
-	if header {
-		var err error
-		cipherdata, err = DeobfHeader(cipherdata)
-		if err != nil {
-			return []byte{}, errors.New("failed to deobfuscate header, maybe not encrypted")
-		}
+func (k Keychain) Decrypt(p Parameters) ([]byte, error) {
+	cipherData, err := deobfuscator(p)
+	if err != nil {
+		return []byte{}, err
 	}
 
-	r, err := age.Decrypt(bytes.NewReader(cipherdata), k.secretKey)
+	r, err := age.Decrypt(bytes.NewReader(cipherData), k.secretKey)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -100,27 +102,13 @@ func (k Keychain) Decrypt(cipherdata []byte, compress bool, header bool) ([]byte
 		return []byte{}, err
 	}
 
-	if compress {
-		raw, err := compression.GzipDecompress(out.Bytes())
-		if err != nil {
-			return []byte{}, err
-		}
-		return raw, nil
-	}
-
-	return out.Bytes(), nil
+	return decompressor(p)
 }
 
-func EncryptWithPwd(pwd string, data []byte, compress bool, header bool) ([]byte, error) {
-	var reader *bytes.Reader
-	if compress {
-		raw, err := compression.GzipCompress(data, 6)
-		if err != nil {
-			return []byte{}, err
-		}
-		reader = bytes.NewReader(raw)
-	} else {
-		reader = bytes.NewReader(data)
+func EncryptWithPwd(p Parameters, pwd string) ([]byte, error) {
+	in, err := compressor(p)
+	if err != nil {
+		return []byte{}, err
 	}
 
 	pwdRecepient, err := age.NewScryptRecipient(pwd)
@@ -138,30 +126,20 @@ func EncryptWithPwd(pwd string, data []byte, compress bool, header bool) ([]byte
 		return []byte{}, err
 	}
 
-	if _, err := io.Copy(w, reader); err != nil {
+	if _, err := io.Copy(w, in); err != nil {
 		return []byte{}, err
 	}
 	if err := w.Close(); err != nil {
 		return []byte{}, err
 	}
 
-	if header {
-		obf, err := ObfHeader(out.Bytes())
-		if err != nil {
-			return []byte{}, errors.New("failed to obfuscate header")
-		}
-		return obf, nil
-	}
-	return out.Bytes(), nil
+	return obfuscator(p, out.Bytes())
 }
 
-func DecryptWithPwd(pwd string, cipherdata []byte, compress bool, header bool) ([]byte, error) {
-	if header {
-		var err error
-		cipherdata, err = DeobfHeader(cipherdata)
-		if err != nil {
-			return []byte{}, errors.New("failed to deobfuscate header, maybe not encrypted")
-		}
+func DecryptWithPwd(p Parameters, pwd string) ([]byte, error) {
+	cipherData, err := deobfuscator(p)
+	if err != nil {
+		return []byte{}, err
 	}
 
 	pwdIdentity, err := age.NewScryptIdentity(pwd)
@@ -169,7 +147,7 @@ func DecryptWithPwd(pwd string, cipherdata []byte, compress bool, header bool) (
 		return []byte{}, err
 	}
 
-	r, err := age.Decrypt(bytes.NewReader(cipherdata), pwdIdentity)
+	r, err := age.Decrypt(bytes.NewReader(cipherData), pwdIdentity)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -179,13 +157,73 @@ func DecryptWithPwd(pwd string, cipherdata []byte, compress bool, header bool) (
 		return []byte{}, err
 	}
 
-	if compress {
-		raw, err := compression.GzipDecompress(out.Bytes())
+	return decompressor(p)
+}
+
+func compressor(p Parameters) (*bytes.Reader, error) {
+	var in *bytes.Reader
+
+	if p.Compress {
+		var writer *bytes.Buffer
+		compressorIn := bytes.NewReader(p.Data)
+
+		err := p.Compressor.CompressStream(compressorIn, writer)
+		if err != nil {
+			return nil, err
+		}
+
+		in = bytes.NewReader(writer.Bytes())
+
+	} else {
+		in = bytes.NewReader(p.Data)
+	}
+	return in, nil
+}
+
+func decompressor(p Parameters) ([]byte, error) {
+	if p.Compress {
+		raw, err := p.Compressor.Decompress(p.Data)
 		if err != nil {
 			return []byte{}, err
 		}
 		return raw, nil
 	}
+	return p.Data, nil
+}
 
-	return out.Bytes(), nil
+func obfuscator(p Parameters, in []byte) ([]byte, error) {
+	if p.Obfuscation {
+		obf, err := p.Obfuscator.Obfuscate(in)
+		if err != nil {
+			return []byte{}, errors.New("failed to obfuscate header")
+		}
+		return obf, nil
+	}
+	return in, nil
+}
+
+func deobfuscator(p Parameters) ([]byte, error) {
+	var cipherData []byte
+	if p.Obfuscation {
+		var err error
+		cipherData, err = p.Obfuscator.Deobfuscate(p.Data)
+		if err != nil {
+			return []byte{}, errors.New("failed to deobfuscate header, maybe not encrypted")
+		}
+	} else {
+		cipherData = p.Data
+	}
+	return cipherData, nil
+}
+
+func (k Keychain) KeychainExport() []string {
+	keys := make([]string, len(k.recipients))
+	for _, key := range k.recipients {
+		keys = append(keys, fmt.Sprint(key))
+	}
+	return keys
+}
+
+func (k Keychain) KeychainExportSecretKey() string {
+	return k.secretKey.String()
 }

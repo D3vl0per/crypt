@@ -1,6 +1,7 @@
-package crypt
+package asymmetric
 
 import (
+	"crypto"
 	"crypto/ed25519"
 	"encoding/hex"
 	"errors"
@@ -14,62 +15,112 @@ import (
 /// Ed25519 Suite
 ///
 
-func GenerateEd25519Keypair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
-	pk, sk, err := ed25519.GenerateKey(generic.Rand())
+type Encryption interface {
+	Encrypt()
+	Decrypt()
+}
+
+type Signing interface {
+	Generate() error
+	GenerateFromSeed([]byte) error
+	Sign([]byte) string
+	Verify([]byte, []byte) string
+}
+
+type Ed25519 struct {
+	SecretKey ed25519.PrivateKey
+	PublicKey ed25519.PublicKey
+}
+type Ed448 struct {
+	SecretKey ed448.PrivateKey
+	PublicKey ed448.PublicKey
+	Context   string
+}
+
+func (e *Ed25519) Generate() error {
+	var err error
+	e.PublicKey, e.SecretKey, err = ed25519.GenerateKey(generic.Rand())
 	if err != nil {
-		return ed25519.PublicKey{}, ed25519.PrivateKey{}, err
+		return err
 	}
-	return pk, sk, err
+
+	return nil
 }
 
-func GenerateEd25519KeypairFromSeed(seed []byte) (ed25519.PrivateKey, error) {
+func (e *Ed25519) GenerateFromSeed(seed []byte) error {
 	if l := len(seed); l != ed25519.SeedSize {
-		return nil, errors.New(generic.StrCnct([]string{"seed size must be ", strconv.Itoa(ed25519.SeedSize), " bytes long"}...))
+		return errors.New(generic.StrCnct([]string{"seed size must be ", strconv.Itoa(ed25519.SeedSize), " bytes long"}...))
 	}
-	return ed25519.NewKeyFromSeed(seed), nil
+	var err error
+	e.SecretKey = ed25519.NewKeyFromSeed(seed)
+	e.PublicKey, err = Ed25519ToPublicKey(e.SecretKey.Public())
+	return err
 }
 
-func SignEd25519(sk ed25519.PrivateKey, msg []byte) string {
-	return hex.EncodeToString(ed25519.Sign(sk, msg))
+func (e *Ed25519) Sign(msg []byte) string {
+	return hex.EncodeToString(ed25519.Sign(e.SecretKey, msg))
 }
 
-func VerifyEd25519(pk ed25519.PublicKey, msg []byte, sig string) (bool, error) {
+func (e *Ed25519) Verify(msg []byte, sig string) (bool, error) {
+
 	sig_raw, err := hex.DecodeString(sig)
 	if err != nil {
 		return false, err
 	}
 
-	return ed25519.Verify(pk, msg, sig_raw), nil
+	return ed25519.Verify(e.PublicKey, msg, sig_raw), nil
 }
 
 ///
 /// ED448 Suite
 ///
 
-func GenerateEd448Keypair() (ed448.PublicKey, ed448.PrivateKey, error) {
-	pk, sk, err := ed448.GenerateKey(generic.Rand())
+func (e *Ed448) Generate() error {
+	var err error
+	e.PublicKey, e.SecretKey, err = ed448.GenerateKey(generic.Rand())
 	if err != nil {
-		return ed448.PublicKey{}, ed448.PrivateKey{}, err
+		return err
 	}
-	return pk, sk, err
+	return nil
 }
 
-func GenerateEd448KeypairFromSeed(seed []byte) (ed448.PrivateKey, error) {
+func (e *Ed448) GenerateFromSeed(seed []byte) error {
 	if l := len(seed); l != ed448.SeedSize {
-		return nil, errors.New(generic.StrCnct([]string{"seed size must be ", strconv.Itoa(ed448.SeedSize), " bytes long"}...))
+		return errors.New(generic.StrCnct([]string{"seed size must be ", strconv.Itoa(ed448.SeedSize), " bytes long"}...))
 	}
-	return ed448.NewKeyFromSeed(seed), nil
+	var err error
+	e.SecretKey = ed448.NewKeyFromSeed(seed)
+	e.PublicKey, err = Ed448ToPublicKey(e.SecretKey.Public())
+	return err
 }
 
-func SignEd448(sk ed25519.PrivateKey, msg []byte) string {
-	return hex.EncodeToString(ed25519.Sign(sk, msg))
+func (e *Ed448) Sign(msg []byte) string {
+	return hex.EncodeToString(ed448.Sign(e.SecretKey, msg, e.Context))
 }
 
-func VerifyEd448(pk ed448.PublicKey, msg []byte, sig string) (bool, error) {
+func (e *Ed448) Verify(msg []byte, sig string) (bool, error) {
 	sig_raw, err := hex.DecodeString(sig)
 	if err != nil {
 		return false, err
 	}
 
-	return ed448.Verify(pk, msg, sig_raw, ""), nil
+	return ed448.Verify(e.PublicKey, msg, sig_raw, e.Context), nil
+}
+
+func Ed25519ToPublicKey(pub crypto.PublicKey) (ed25519.PublicKey, error) {
+	switch pub := pub.(type) {
+	case ed25519.PublicKey:
+		return pub, nil
+	default:
+		return nil, errors.New("public key type")
+	}
+}
+
+func Ed448ToPublicKey(pub crypto.PublicKey) (ed448.PublicKey, error) {
+	switch pub := pub.(type) {
+	case ed448.PublicKey:
+		return pub, nil
+	default:
+		return nil, errors.New("public key type")
+	}
 }

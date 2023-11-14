@@ -6,13 +6,11 @@ package aged
 
 import (
 	"crypto/cipher"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
 
 	"golang.org/x/crypto/chacha20poly1305"
-	"golang.org/x/crypto/hkdf"
 
 	// nolint:staticcheck
 	"golang.org/x/crypto/poly1305"
@@ -239,13 +237,4 @@ func (w *Writer) flushChunk(last bool) error {
 	w.unwritten = w.buf[:0]
 	incNonce(&w.nonce)
 	return err
-}
-
-func StreamKey(fileKey, nonce []byte) []byte {
-	h := hkdf.New(sha256.New, fileKey, nonce, []byte("payload"))
-	streamKey := make([]byte, chacha20poly1305.KeySize)
-	if _, err := io.ReadFull(h, streamKey); err != nil {
-		panic(err)
-	}
-	return streamKey
 }

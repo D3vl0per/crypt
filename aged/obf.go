@@ -6,6 +6,13 @@ import (
 	"errors"
 )
 
+type Obfuscation interface {
+	Obfuscate([]byte) ([]byte, error)
+	Deobfuscate([]byte) ([]byte, error)
+}
+
+type AgeV1Obf struct{}
+
 var (
 	//nolint:gochecknoglobals
 	endOfHeader = []byte{45, 45, 45, 32}
@@ -16,7 +23,8 @@ var (
 //nolint:gochecknoglobals
 const lengthOfKey = 47
 
-func ObfHeader(payload []byte) ([]byte, error) {
+func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
+
 	headerIndex := bytes.Index(payload, endOfHeader)
 	if headerIndex == -1 {
 		return []byte{}, errors.New("missing end flag")
@@ -37,7 +45,7 @@ func ObfHeader(payload []byte) ([]byte, error) {
 	return bytes.ReplaceAll(payload, header, obfHeader), nil
 }
 
-func DeobfHeader(payload []byte) ([]byte, error) {
+func (a *AgeV1Obf) Deobfuscate(payload []byte) ([]byte, error) {
 	headerIndex := bytes.Index(payload, endFlag)
 	if headerIndex == -1 {
 		return []byte{}, errors.New("missing end flag")

@@ -6,9 +6,34 @@ import (
 	"crypto/ed25519"
 	"crypto/subtle"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 )
+
+type Encoder interface {
+	Encode([]byte) string
+	Decode([]byte) ([]byte, error)
+}
+
+type Base64 struct{}
+type Hex struct{}
+
+func (b *Base64) Encode(data []byte) string {
+	return base64.RawStdEncoding.EncodeToString(data)
+}
+
+func (b *Base64) Decode(data string) ([]byte, error) {
+	return base64.RawStdEncoding.DecodeString(data)
+}
+
+func (h *Hex) Encode(data []byte) string {
+	return hex.EncodeToString(data)
+}
+
+func (h *Hex) Decode(data string) ([]byte, error) {
+	return hex.DecodeString(data)
+}
 
 func Compare(x, y []byte) bool {
 	return subtle.ConstantTimeCompare(x, y) == 1
