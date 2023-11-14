@@ -3,6 +3,7 @@ package hash
 import (
 	"encoding/base64"
 	"errors"
+	"math"
 	"regexp"
 	"strconv"
 
@@ -122,7 +123,11 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 		if err != nil {
 			return false, errors.New(generic.StrCnct([]string{"parallelism parameter parsing error: ", err.Error()}...))
 		}
-		a.Parallelism = uint8(parsed)
+		if parsed > 0 && parsed <= math.MaxInt32 {
+			a.Parallelism = uint8(parsed)
+		} else {
+			return false, errors.New("parallelism parameter parsing error, can't parse that number")
+		}
 	}
 
 	if a.KeyLen == 0 {
