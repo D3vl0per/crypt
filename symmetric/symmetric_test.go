@@ -62,3 +62,15 @@ func TestXChaCha20(t *testing.T) {
 
 	r.Equal(t, payload, plaintext)
 }
+
+func TestXOR(t *testing.T) {
+    a := []byte{0x0f, 0x1a, 0x2b, 0x3c}
+    b := []byte{0x2a, 0x1b, 0x0c, 0x3d}
+
+	sym := symmetric.Xor{}
+    expected := []byte{0x25, 0x01, 0x27, 0x01}
+    result, err := sym.Encrypt(a, b)
+    r.NoError(t, err)
+
+    r.Equal(t, expected, result)
+}

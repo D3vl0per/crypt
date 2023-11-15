@@ -210,7 +210,7 @@ func deobfuscator(p Parameters) ([]byte, error) {
 		var err error
 		cipherData, err = p.Obfuscator.Deobfuscate(p.Data)
 		if err != nil {
-			return []byte{}, errors.New("failed to deobfuscate header, maybe not encrypted")
+			return []byte{}, errors.New("failed to deobfuscate header, maybe not obfuscated?")
 		}
 	} else {
 		cipherData = p.Data

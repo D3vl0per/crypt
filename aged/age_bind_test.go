@@ -194,6 +194,9 @@ func TestRoundTrips(t *testing.T) {
 	for _, encryptParam := range p {
 
 		decryptParam := encryptParam
+		encryptPwdParam := encryptParam
+		decryptPwdParam := encryptPwdParam
+
 		var err error
 
 		decryptParam.Data, err = config.keychain.Encrypt(encryptParam)
@@ -211,8 +214,46 @@ func TestRoundTrips(t *testing.T) {
 		decryptedData3, err4 := config.keychainWrong.Decrypt(decryptParam)
 		r.Equal(t, []byte{}, decryptedData3)
 		r.EqualError(t, err4, "no identity matched any of the recipients")
+
+
+		pwd, err := generic.CSPRNG(32)
+		r.NoError(t, err)
+
+		decryptPwdParam.Data, err = aged.EncryptWithPwd(encryptPwdParam, string(pwd))
+		r.NoError(t, err, "Encryption without error")
+		t.Logf("Pwd protected data: %d", decryptPwdParam.Data)
+
+		decryptedPwdData, err := aged.DecryptWithPwd(decryptPwdParam, string(pwd))
+		r.NoError(t, err, "Decryption without error")
+		r.Equal(t, encryptPwdParam.Data, decryptedPwdData)
+	}
+}
+
+func TestWrongSecretKeyKeyringSetup(t *testing.T) {
+	keychain := keychainInit(t)
+
+	s := aged.KeychainSetup{
+		SecretKey:     "correct horse battery staple",
+		PublicKeys:    []string{keychain.publicKey1.Recipient().String(), keychain.publicKey2.Recipient().String()},
+		SelfRecipient: true,
 	}
 
+	_, err := aged.SetupKeychain(s)
+	r.Error(t, err)
+}
+
+func TestWrongPublicKeyKeyringSetup(t *testing.T) {
+	keychain := keychainInit(t)
+
+	s := aged.KeychainSetup{
+		SecretKey:     keychain.keychain.KeychainExportSecretKey(),
+		PublicKeys:    []string{keychain.publicKey1.Recipient().String(), keychain.publicKey2.Recipient().String(), "correct horse battery staple"},
+		SelfRecipient: true,
+	}
+
+	_, err := aged.SetupKeychain(s)
+	r.Error(t, err)
+	t.Log(err.Error())
 }
 
 /*
@@ -299,16 +340,7 @@ func TestRoundTrips(t *testing.T) {
 	}
 
 	func TestEncryptWithPwd(t *testing.T) {
-		key, err := generic.CSPRNG(32)
-		r.NoError(t, err, "CSPRNG without error")
-
-		cipherData, err := aged.EncryptWithPwd(string(key), plainData, true, true)
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Size: %d", len(cipherData))
-
-		decryptedData, err := aged.DecryptWithPwd(string(key), cipherData, true, true)
-		r.NoError(t, err, "Decryption without error")
-		r.Equal(t, plainData, decryptedData)
+		
 	}
 */
 
