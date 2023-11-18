@@ -11,6 +11,7 @@ type Obfuscation interface {
 	Deobfuscate([]byte) ([]byte, error)
 }
 
+// AgeV1Obf is a obfuscation for age encryption header
 type AgeV1Obf struct{}
 
 var (

@@ -26,7 +26,7 @@ type XChaCha20 struct{}
 type Xor struct{}
 
 type XChaCha20Stream struct {
-	Key []byte
+	Key  []byte
 	Hash func() hash.Hash
 }
 
@@ -150,7 +150,7 @@ func (x *XChaCha20Stream) Decrypt(in io.Reader, out io.Writer) error {
 	return nil
 }
 
-type stream struct{
+type stream struct {
 	Hash func() hash.Hash
 }
 
@@ -190,9 +190,9 @@ func (s *stream) key(fileKey, nonce []byte) ([]byte, error) {
 	h := hkdf.New(s.Hash, fileKey, nonce, []byte("payload"))
 	streamKey := make([]byte, chacha20poly1305.KeySize)
 	if _, err := io.ReadFull(h, streamKey); err != nil {
-		return nil,err
+		return nil, err
 	}
-	if generic.AllZero(streamKey){
+	if generic.AllZero(streamKey) {
 		return nil, errors.New("streamer key is all zero")
 	}
 	return streamKey, nil

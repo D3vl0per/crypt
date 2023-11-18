@@ -4,15 +4,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"hash"
-	"io"
-	"math"
 	"regexp"
 	"strconv"
 
 	"github.com/D3vl0per/crypt/generic"
 	"golang.org/x/crypto/argon2"
-	"golang.org/x/crypto/hkdf"
-	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -30,9 +26,9 @@ type Kdf interface {
 
 type Hkdf struct {
 	Salt     []byte
-	Key   []byte
+	Key      []byte
 	HashMode func() hash.Hash
-	Encoder generic.Hex
+	Encoder  generic.Hex
 }
 
 type Argon2ID struct {
@@ -88,6 +84,7 @@ func (a *Argon2ID) Hash(data []byte) (string, error) {
 		}
 	}
 
+	// Set default values
 	a.Iterations |= AIterations
 	a.Memory |= AMemory
 	a.Parallelism |= AParallelism
@@ -114,31 +111,30 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 	}
 
 	if a.Iterations == 0 {
-		parsed, err := strconv.ParseUint(parameters["iterations"], 10, 32)
+		parsed, err := strconv.ParseInt(parameters["iterations"], 10, 32)
 		if err != nil {
 			return false, errors.New(generic.StrCnct([]string{"iteration parameter parsing error: ", err.Error()}...))
 		}
+
 		a.Iterations = uint32(parsed)
 	}
 
 	if a.Memory == 0 {
-		parsed, err := strconv.ParseUint(parameters["memory"], 10, 32)
+		parsed, err := strconv.ParseInt(parameters["memory"], 10, 32)
 		if err != nil {
 			return false, errors.New(generic.StrCnct([]string{"memory parameter parsing error: ", err.Error()}...))
 		}
+
 		a.Memory = uint32(parsed)
 	}
 
 	if a.Parallelism == 0 {
-		parsed, err := strconv.ParseUint(parameters["parallelism"], 10, 32)
+		parsed, err := strconv.ParseInt(parameters["parallelism"], 10, 8)
 		if err != nil {
 			return false, errors.New(generic.StrCnct([]string{"parallelism parameter parsing error: ", err.Error()}...))
 		}
-		if parsed > 0 && parsed <= math.MaxInt32 {
-			a.Parallelism = uint8(parsed)
-		} else {
-			return false, errors.New("parallelism parameter parsing error, can't parse that number")
-		}
+
+		a.Parallelism = uint8(parsed)
 	}
 
 	if a.KeyLen == 0 {
@@ -171,11 +167,11 @@ func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
 		"hash":        matches[7],
 	}
 
-	if len(parameters["algorithm"]) == 0 || parameters["algorithm"] != "argon2id" {
+	if len(parameters["algorithm"]) == 0 || !generic.CompareString(parameters["algorithm"], "argon2id") {
 		return map[string]string{}, errors.New(generic.StrCnct([]string{"invalid algorithm: ", parameters["algorithm"]}...))
 	}
 
-	if len(parameters["version"]) == 0 || parameters["version"] != strconv.FormatInt(int64(argon2.Version), 10) {
+	if len(parameters["version"]) == 0 || !generic.CompareString(parameters["version"], strconv.FormatInt(int64(argon2.Version), 10)) {
 		return map[string]string{}, errors.New(generic.StrCnct([]string{"invalid version: ", parameters["version"]}...))
 	}
 
@@ -190,6 +186,7 @@ func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
 	return parameters, nil
 }
 
+/*
 func (h *Hkdf) Hash(data []byte) (string, error) {
 	if h.Salt != nil {
 		if len(h.Salt) != h.HashMode().Size() {
@@ -207,15 +204,15 @@ func (h *Hkdf) Hash(data []byte) (string, error) {
 		h.HashMode = sha3.New512
 	}
 
-	kdf := hkdf.New(h.HashMode, h.Key , h.Salt, data)
+	kdf := hkdf.New(h.HashMode, h.Key, h.Salt, data)
 
 	key := make([]byte, HKDFKeysize)
 
 	if _, err := io.ReadFull(kdf, key); err != nil {
 		return "", err
 	}
-	 
-	return generic.StrCnct([]string{h.Encoder.Encode(key), "#", h.Encoder.Encode(h.Salt), }...), nil
+
+	return generic.StrCnct([]string{h.Encoder.Encode(key), "#", h.Encoder.Encode(h.Salt)}...), nil
 }
 
 func (h *Hkdf) Validate(data []byte, hash string) (bool, error) {
@@ -228,14 +225,13 @@ func (h *Hkdf) Validate(data []byte, hash string) (bool, error) {
 		h.HashMode = sha3.New512
 	}
 
-	kdf := hkdf.New(h.HashMode, h.Key , h.Salt, data)
+	kdf := hkdf.New(h.HashMode, h.Key, h.Salt, data)
 
 	key := make([]byte, HKDFKeysize)
 
 	if _, err := io.ReadFull(kdf, key); err != nil {
 		return false, err
 	}
-	
 
 	hash_raw, err := h.Encoder.Decode(hash)
 	if err != nil {
@@ -243,6 +239,5 @@ func (h *Hkdf) Validate(data []byte, hash string) (bool, error) {
 	}
 
 	return generic.Compare(hash_raw, h.Salt), nil
-	//return generic.Compare(hash_raw, hash_to_validate), nil
 }
-
+*/

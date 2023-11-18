@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 // https://github.com/FiloSottile/age/blob/main/internal/stream/stream.go
+
+// Modified age stream.go to use xchacha20poly1305 instead of chacha20poly1305
+
 package aged
 
 import (

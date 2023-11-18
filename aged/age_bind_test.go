@@ -69,7 +69,6 @@ func keychainInit(t *testing.T) chains {
 	}
 }
 
-
 func TestGenKeypair(t *testing.T) {
 	_, err := aged.GenKeypair()
 	r.NoError(t, err)
@@ -107,125 +106,150 @@ func TestRoundTrips(t *testing.T) {
 	big, err := generic.CSPRNG(10485760)
 	r.NoError(t, err)
 
-	p := []aged.Parameters{
-		// No compress, No obfuscator
+	tests := []struct {
+		name      string
+		parameter aged.Parameters
+	}{
 		{
-			Data:        config.plainData,
-			Obfuscation: false,
-			Compress:    false,
+			name: "No compress, No obfuscator",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscation: false,
+				Compress:    false,
+			},
 		},
-		// No compress, obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscator:  &aged.AgeV1Obf{},
-			Obfuscation: true,
-			Compress:    false,
+			name: "No compress, obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscator:  &aged.AgeV1Obf{},
+				Obfuscation: true,
+				Compress:    false,
+			},
 		},
-		// Compress with Gzip, no obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscation: false,
-			Compressor:  &compression.Gzip{},
-			Compress:    true,
+			name: "Compress with Gzip, no obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscation: false,
+				Compressor:  &compression.Gzip{},
+				Compress:    true,
+			},
 		},
-		// Compress with Gzip, obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscator:  &aged.AgeV1Obf{},
-			Obfuscation: true,
-			Compressor:  &compression.Gzip{},
-			Compress:    true,
+			name: "Compress with Gzip, obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscator:  &aged.AgeV1Obf{},
+				Obfuscation: true,
+				Compressor:  &compression.Gzip{},
+				Compress:    true,
+			},
 		},
-		// Compress with Zstd, no obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscation: false,
-			Compressor:  &compression.Zstd{},
-			Compress:    true,
+			name: "Compress with Zstd, no obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscation: false,
+				Compressor:  &compression.Zstd{},
+				Compress:    true,
+			},
 		},
-		// Compress with Zstd, obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscator:  &aged.AgeV1Obf{},
-			Obfuscation: true,
-			Compressor:  &compression.Zstd{},
-			Compress:    true,
+			name: "Compress with Zstd, obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscator:  &aged.AgeV1Obf{},
+				Obfuscation: true,
+				Compressor:  &compression.Zstd{},
+				Compress:    true,
+			},
 		},
-		// Compress with Flate, no obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscation: false,
-			Compressor:  &compression.Flate{},
-			Compress:    true,
+			name: "Compress with Flate, no obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscation: false,
+				Compressor:  &compression.Flate{},
+				Compress:    true,
+			},
 		},
-		// Compess with Flate, obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscator:  &aged.AgeV1Obf{},
-			Obfuscation: true,
-			Compressor:  &compression.Flate{},
-			Compress:    true,
+			name: "Compess with Flate, obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscator:  &aged.AgeV1Obf{},
+				Obfuscation: true,
+				Compressor:  &compression.Flate{},
+				Compress:    true,
+			},
 		},
-		// Compress with Zlib, no obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscation: false,
-			Compressor:  &compression.Zlib{},
-			Compress:    true,
+			name: "Compress with Zlib, no obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscation: false,
+				Compressor:  &compression.Zlib{},
+				Compress:    true,
+			},
 		},
-		// Compress with Zlib, obfuscate
 		{
-			Data:        config.plainData,
-			Obfuscator:  &aged.AgeV1Obf{},
-			Obfuscation: true,
-			Compressor:  &compression.Zlib{},
-			Compress:    false,
+			name: "Compress with Zlib, obfuscate",
+			parameter: aged.Parameters{
+				Data:        config.plainData,
+				Obfuscator:  &aged.AgeV1Obf{},
+				Obfuscation: true,
+				Compressor:  &compression.Zlib{},
+				Compress:    false,
+			},
 		},
-		// Compress big file with Zstd, obfuscate
 		{
-			Data:        big,
-			Obfuscator:  &aged.AgeV1Obf{},
-			Obfuscation: true,
-			Compressor:  &compression.Zlib{},
-			Compress:    true,
+			name: "Compress big file with Zstd, obfuscate",
+			parameter: aged.Parameters{
+				Data:        big,
+				Obfuscator:  &aged.AgeV1Obf{},
+				Obfuscation: true,
+				Compressor:  &compression.Zlib{},
+				Compress:    true,
+			},
 		},
 	}
 
-	for _, encryptParam := range p {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			decryptParam := tt.parameter
+			encryptPwdParam := tt.parameter
+			decryptPwdParam := encryptPwdParam
 
-		decryptParam := encryptParam
-		encryptPwdParam := encryptParam
-		decryptPwdParam := encryptPwdParam
+			var err error
 
-		var err error
+			decryptParam.Data, err = config.keychain.Encrypt(tt.parameter)
+			r.NoError(t, err, "Encryption without error")
+			t.Logf("Original size:%d Processed size: %d", len(tt.parameter.Data), len(decryptParam.Data))
 
-		decryptParam.Data, err = config.keychain.Encrypt(encryptParam)
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Original size:%d Processed size: %d", len(encryptParam.Data), len(decryptParam.Data))
+			decryptedData, err2 := config.keychain.Decrypt(decryptParam)
+			r.NoError(t, err2, "Decryption without error")
+			r.Equal(t, tt.parameter.Data, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
 
-		decryptedData, err2 := config.keychain.Decrypt(decryptParam)
-		r.NoError(t, err2, "Decryption without error")
-		r.Equal(t, encryptParam.Data, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
+			decryptedData2, err3 := config.keychain2.Decrypt(decryptParam)
+			r.NoError(t, err3, "Decryption two without error")
+			r.Equal(t, tt.parameter.Data, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
 
-		decryptedData2, err3 := config.keychain2.Decrypt(decryptParam)
-		r.NoError(t, err3, "Decryption two without error")
-		r.Equal(t, encryptParam.Data, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
+			decryptedData3, err4 := config.keychainWrong.Decrypt(decryptParam)
+			r.Equal(t, []byte{}, decryptedData3)
+			r.EqualError(t, err4, "no identity matched any of the recipients")
 
-		decryptedData3, err4 := config.keychainWrong.Decrypt(decryptParam)
-		r.Equal(t, []byte{}, decryptedData3)
-		r.EqualError(t, err4, "no identity matched any of the recipients")
+			pwd, err := generic.CSPRNG(32)
+			r.NoError(t, err)
 
+			decryptPwdParam.Data, err = aged.EncryptWithPwd(encryptPwdParam, string(pwd))
+			r.NoError(t, err, "Encryption without error")
+			t.Logf("Pwd protected data: %d", decryptPwdParam.Data)
 
-		pwd, err := generic.CSPRNG(32)
-		r.NoError(t, err)
-
-		decryptPwdParam.Data, err = aged.EncryptWithPwd(encryptPwdParam, string(pwd))
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Pwd protected data: %d", decryptPwdParam.Data)
-
-		decryptedPwdData, err := aged.DecryptWithPwd(decryptPwdParam, string(pwd))
-		r.NoError(t, err, "Decryption without error")
-		r.Equal(t, encryptPwdParam.Data, decryptedPwdData)
+			decryptedPwdData, err := aged.DecryptWithPwd(decryptPwdParam, string(pwd))
+			r.NoError(t, err, "Decryption without error")
+			r.Equal(t, encryptPwdParam.Data, decryptedPwdData)
+		})
 	}
 }
 
@@ -340,10 +364,6 @@ func TestWrongPublicKeyKeyringSetup(t *testing.T) {
 	}
 
 	func TestEncryptWithPwd(t *testing.T) {
-		
+
 	}
 */
-
-
-
-

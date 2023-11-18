@@ -219,7 +219,7 @@ func deobfuscator(p Parameters) ([]byte, error) {
 }
 
 func (k Keychain) KeychainExport() []string {
-	var keys []string
+	keys := make([]string, len(k.recipients))
 	for _, key := range k.recipients {
 		keys = append(keys, fmt.Sprint(key))
 	}

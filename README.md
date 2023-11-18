@@ -10,6 +10,9 @@ Crypto suite:
     - CSPRNG
     - CSPRNGHex
     - /dev/hwrng
+    - Encoders
+        - Base64
+        - Hex
 - Symmetric
     - XChacha20-poly1305
     - XChacha20-poly1305 Stream (modified age code)

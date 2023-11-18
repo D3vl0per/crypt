@@ -2,7 +2,7 @@ lint:
 	golangci-lint run --fix
 
 test:
-	go clean -testcache && go test -cover ./...
+	go clean -testcache && go test -race -cover ./...
 
 test-v:
 	go clean -testcache && go test ./... -v

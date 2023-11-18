@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 )
 
+// Secure way to delete file
 func Delete(targetPath string, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
@@ -24,7 +25,6 @@ func Delete(targetPath string, cycle int) error {
 	}
 
 	zeroBytes := make([]byte, fileInfo.Size())
-	copy(zeroBytes, "0")
 
 	for i := 0; i < cycle; i++ {
 		// Owerwrite with zeros
@@ -65,6 +65,7 @@ func Delete(targetPath string, cycle int) error {
 	return nil
 }
 
+// Secure way to overwrite file
 func Overwrite(targetPath string, data []byte, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
@@ -83,7 +84,6 @@ func Overwrite(targetPath string, data []byte, cycle int) error {
 	}
 
 	zeroBytes := make([]byte, fileInfo.Size())
-	copy(zeroBytes, "0")
 
 	for i := 0; i < cycle; i++ {
 		// Owerwrite with zeros
@@ -125,7 +125,7 @@ func Overwrite(targetPath string, data []byte, cycle int) error {
 	if err != nil {
 		return err
 	}
-	if n != int(fileInfo.Size()) {
+	if n != len(data) {
 		return errors.New("file overwrite bytes mismatch")
 	}
 	return nil
