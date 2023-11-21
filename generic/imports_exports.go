@@ -28,10 +28,10 @@ type PKIX struct {
 }
 
 type PKCS struct {
-	SecretKey        ed25519.PrivateKey
-	ImportData       string
-	ExportData       string
-	Encoder          Encoder
+	SecretKey  ed25519.PrivateKey
+	ImportData string
+	ExportData string
+	Encoder    Encoder
 }
 
 // struct PKIX ImportData (string) -> struct PKIX PublicKey (ed25519.PublicKey)
@@ -67,19 +67,20 @@ func (e *PKIX) Import() error {
 	e.PublicKey = pkC.(ed25519.PublicKey)
 	return nil
 }
+
 // Two ways to export:
 // 1. struct PKIX PublicKey (ed25519.PublicKey) -> struct PKIX ExportData (string)
 // 2. struct PKIX ExportPublicKey (crypto.PublicKey) -> struct PKIX ExportData (string)
 func (e *PKIX) Export() error {
-	
+
 	if e.ExportPublicKey == nil && e.PublicKey == nil {
 		return errors.New("missing public key")
 	}
-	
+
 	if e.ExportPublicKey != nil && e.PublicKey != nil {
 		return errors.New("cannot export both public key and export public key")
 	}
-	
+
 	var err error
 	var marshal []byte
 	if e.ExportPublicKey != nil {

@@ -47,7 +47,7 @@ func TestE2EEEd25519SignVerify(t *testing.T) {
 	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 	tests := []struct {
-		name      string
+		name string
 		asym asymmetric.Ed25519
 	}{
 		{
@@ -97,7 +97,6 @@ func TestE2EEEd25519SignVerify(t *testing.T) {
 		},
 	}
 
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.asym.Generate()
@@ -132,7 +131,7 @@ func TestE2EEEd448SignVerify(t *testing.T) {
 	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 	tests := []struct {
-		name      string
+		name string
 		asym asymmetric.Ed448
 	}{
 		{
@@ -181,7 +180,6 @@ func TestE2EEEd448SignVerify(t *testing.T) {
 			},
 		},
 	}
-
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

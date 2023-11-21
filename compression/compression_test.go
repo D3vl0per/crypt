@@ -31,8 +31,8 @@ func TestRoundTrips(t *testing.T) {
 	zstdModes := []int{11, 7, 3, 1}
 
 	tests := []struct {
-		name     string
-		data     []byte
+		name string
+		data []byte
 	}{
 		{
 			name: "Random data",

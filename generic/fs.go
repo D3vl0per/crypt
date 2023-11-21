@@ -152,7 +152,7 @@ func ReadFileContent(path string) ([]byte, error) {
 	return data, nil
 }
 
-func WriteAndFlush(file *os.File, rnd []byte) (n int, err error){
+func WriteAndFlush(file *os.File, rnd []byte) (n int, err error) {
 	n, err = file.Write(rnd)
 	if err != nil {
 		return 0, err
