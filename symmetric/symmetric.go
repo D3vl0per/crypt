@@ -1,6 +1,7 @@
 package symmetric
 
 import (
+	"crypto/subtle"
 	"errors"
 	"hash"
 	"io"
@@ -30,9 +31,9 @@ type XChaCha20Stream struct {
 	Hash func() hash.Hash
 }
 
-// /
-// / XChaCha20-Poly1305
-// /
+///
+/// XChaCha20-Poly1305
+///
 func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
 	if len(key) != chacha20poly1305.KeySize {
 		return []byte{}, errors.New("wrong key size")
@@ -74,21 +75,24 @@ func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-// /
-// / XOR
-// /
+///
+/// XOR
+///
 func (x *Xor) Encrypt(key, payload []byte) ([]byte, error) {
 	if len(payload) != len(key) {
-		return []byte{}, errors.New("insecure xor operation, key and payload length need to equal")
+		return []byte{}, errors.New("insecure xor operation, key and payload length need to be equal")
 	}
 
+	
 	xored := make([]byte, len(payload))
-	for i := range payload {
-		xored[i] = payload[i] ^ key[i]
-	}
+	subtle.XORBytes(xored, payload, key)
 
 	if len(payload) != len(xored) || len(key) != len(xored) {
 		return []byte{}, errors.New("xored array length mismatch")
+	}
+
+	if generic.AllZero(xored) {
+		return []byte{}, errors.New("xored array has just zeroes")
 	}
 
 	return xored, nil
@@ -98,6 +102,9 @@ func (x *Xor) Decrypt(key, payload []byte) ([]byte, error) {
 	return x.Encrypt(key, payload)
 }
 
+///
+/// XChaCha20-Poly1305 Age Stream
+///
 func (x *XChaCha20Stream) Encrypt(in io.Reader, out io.Writer) error {
 	if len(x.Key) != chacha20poly1305.KeySize {
 		return errors.New("wrong key size")

@@ -2,6 +2,7 @@ package symmetric
 
 import (
 	"crypto/aes"
+	"crypto/subtle"
 	"errors"
 
 	"github.com/D3vl0per/crypt/generic"
@@ -14,7 +15,7 @@ func EncryptSecretBox(secret, plaintext []byte) ([]byte, error) {
 	}
 
 	var secretKey [32]byte
-	copy(secretKey[:], secret)
+	subtle.ConstantTimeCopy(1, secretKey[:], secret)
 
 	nonce_raw, err := generic.CSPRNG(24)
 	if err != nil {
@@ -22,7 +23,7 @@ func EncryptSecretBox(secret, plaintext []byte) ([]byte, error) {
 	}
 
 	var nonce [24]byte
-	copy(nonce[:], nonce_raw)
+	subtle.ConstantTimeCopy(1, nonce[:], nonce_raw)
 
 	return secretbox.Seal(nonce[:], plaintext, &nonce, &secretKey), nil
 }
@@ -33,10 +34,10 @@ func DecryptSecretBox(secret, ciphertext []byte) ([]byte, error) {
 	}
 
 	var secretKey [32]byte
-	copy(secretKey[:], secret)
+	subtle.ConstantTimeCopy(1, secretKey[:], secret)
 
 	var nonce [24]byte
-	copy(nonce[:], ciphertext[:24])
+	subtle.ConstantTimeCopy(1, nonce[:], ciphertext[:24])
 
 	decrypted, ok := secretbox.Open(nil, ciphertext[24:], &nonce, &secretKey)
 	if !ok {

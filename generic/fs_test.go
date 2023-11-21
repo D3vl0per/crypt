@@ -1,39 +1,34 @@
 package generic_test
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
+	r "github.com/stretchr/testify/require"
 )
 
 func TestDelete(t *testing.T) {
 	// Create a temporary file for testing
 	tempFile, err := os.CreateTemp("", "testfile")
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
+
 	defer os.Remove(tempFile.Name())
 
 	// Write some data to the temporary file
 	data := []byte("test data")
 	_, err = tempFile.Write(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
 
 	// Close the file before deleting it
 	err = tempFile.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
 
 	// Call the Delete function with the temporary file path
 	err = generic.Delete(tempFile.Name(), 3)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
 
 	// Check if the file has been deleted
 	_, err = os.Stat(tempFile.Name())
@@ -41,47 +36,37 @@ func TestDelete(t *testing.T) {
 		t.Errorf("expected file to be deleted, got error: %v", err)
 	}
 }
-
-/*
 func TestOverwrite(t *testing.T) {
 	// Create a temporary file for testing
 	tempFile, err := os.CreateTemp("", "testfile")
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
+
 	defer os.Remove(tempFile.Name())
 
 	// Write some data to the temporary file
-	data := []byte("test data")
+	data, err := generic.CSPRNG(32)
+	r.NoError(t, err)
+
+	expectedContents, err := generic.CSPRNG(32)
+	r.NoError(t, err)
+
 	_, err = tempFile.Write(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
 
 	// Close the file before overwriting it
 	err = tempFile.Close()
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
 
-	expectedContents := []byte("new data")
 	// Call the Overwrite function with the temporary file path
-	err = generic.Overwrite(tempFile.Name(), expectedContents, 3)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err = generic.Overwrite(tempFile.Name(), expectedContents, 10)
+	r.NoError(t, err)
 
 	// Read the contents of the file
 	fileContents, err := generic.ReadFileContent(tempFile.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
+	r.NoError(t, err)
 
-	t.Log(string(fileContents))
-
-	// Check if the file has been overwritten correctly
+	// Check if the file contents have been overwritten
 	if !bytes.Equal(fileContents, expectedContents) {
 		t.Errorf("expected file contents to be %q, got %q", expectedContents, fileContents)
 	}
 }
-*/

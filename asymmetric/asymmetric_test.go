@@ -46,45 +46,73 @@ func TestGenerateEd25519KeypairFromSeed(t *testing.T) {
 func TestE2EEEd25519SignVerify(t *testing.T) {
 	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
-	asym := asymmetric.Ed25519{}
+	tests := []struct {
+		name      string
+		asym asymmetric.Ed25519
+	}{
+		{
+			name: "Raw keys",
+		},
+		{
+			name: "Base64 encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.Base64{},
+			},
+		},
+		{
+			name: "UrlBase64 encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.UrlBase64{},
+			},
+		},
+		{
+			name: "RawUrlBase64 encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.RawUrlBase64{},
+			},
+		},
+		{
+			name: "RawBase64 encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.RawBase64{},
+			},
+		},
+		{
+			name: "Base32 encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.Base32{},
+			},
+		},
+		{
+			name: "PaddinglessBase32 encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.PaddinglessBase32{},
+			},
+		},
+		{
+			name: "Hex encoder",
+			asym: asymmetric.Ed25519{
+				Encoder: &generic.Hex{},
+			},
+		},
+	}
 
-	err := asym.Generate()
-	r.NoError(t, err)
 
-	signature := asym.Sign(msg)
-	r.NotEmpty(t, signature)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.asym.Generate()
+			r.NoError(t, err)
 
-	isValid, err := asym.Verify(msg, signature)
-	r.NoError(t, err)
-	r.True(t, isValid)
+			signature := tt.asym.Sign(msg)
+			r.NotEmpty(t, signature)
+			t.Log("Signature:", signature)
+
+			isValid, err := tt.asym.Verify(msg, signature)
+			r.NoError(t, err)
+			r.True(t, isValid)
+		})
+	}
 }
-
-/*
-func TestKeyWrapping(t *testing.T) {
-
-	pk, sk, err := GenerateEd25519Keypair()
-	t.Log("Public Key", pk)
-	t.Log("Secret Key", sk)
-	r.NoError(t, err)
-
-	pk_w, err := ExportECCPK(sk.Public())
-	t.Log("Wrapped Public Key", pk_w)
-	r.NoError(t, err)
-
-	sk_w, err := ExportECCSK(sk)
-	t.Log("Wrapped Secret Key", sk_w)
-	r.NoError(t, err)
-
-	pk_2, err := ImportECCPK(pk_w)
-	r.NoError(t, err)
-
-	sk_2, err := ImportECCSK(sk_w)
-	r.NoError(t, err)
-
-	r.Equal(t, pk, pk_2)
-	r.Equal(t, sk, sk_2)
-}
-*/
 
 func TestGenerateEd448Keypair(t *testing.T) {
 	asym := asymmetric.Ed448{}
@@ -98,6 +126,77 @@ func TestGenerateEd448Keypair(t *testing.T) {
 	t.Log("Ed448 Secret Key Hex:", hex.EncodeToString(asym.SecretKey))
 	t.Log("Ed448 Public Key:", asym.PublicKey)
 	t.Log("Ed448 Public Key Hex:", hex.EncodeToString(asym.PublicKey))
+}
+
+func TestE2EEEd448SignVerify(t *testing.T) {
+	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+
+	tests := []struct {
+		name      string
+		asym asymmetric.Ed448
+	}{
+		{
+			name: "Raw keys",
+		},
+		{
+			name: "Base64 encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.Base64{},
+			},
+		},
+		{
+			name: "UrlBase64 encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.UrlBase64{},
+			},
+		},
+		{
+			name: "RawUrlBase64 encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.RawUrlBase64{},
+			},
+		},
+		{
+			name: "RawBase64 encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.RawBase64{},
+			},
+		},
+		{
+			name: "Base32 encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.Base32{},
+			},
+		},
+		{
+			name: "PaddinglessBase32 encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.PaddinglessBase32{},
+			},
+		},
+		{
+			name: "Hex encoder",
+			asym: asymmetric.Ed448{
+				Encoder: &generic.Hex{},
+			},
+		},
+	}
+
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.asym.Generate()
+			r.NoError(t, err)
+
+			signature := tt.asym.Sign(msg)
+			r.NotEmpty(t, signature)
+			t.Log("Signature:", signature)
+
+			isValid, err := tt.asym.Verify(msg, signature)
+			r.NoError(t, err)
+			r.True(t, isValid)
+		})
+	}
 }
 
 // Deterministic generation check.

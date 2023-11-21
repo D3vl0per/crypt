@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"errors"
 	"hash"
 
 	"github.com/D3vl0per/crypt/generic"
@@ -8,23 +9,47 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+var (
+	ErrHmacSecretNil = errors.New("HMAC secret is nil")
+)
+
 type Algorithms interface {
+	// data
 	Hash([]byte) ([]byte, error)
+	// plaintext, expectedHash
 	ValidateHash([]byte, []byte) (bool, error)
-	Hmac([]byte, []byte) ([]byte, error)
-	ValidateHmac([]byte, []byte, []byte) (bool, error)
+	// data
+	Hmac([]byte) ([]byte, error)
+	// data, expectedHash
+	ValidateHmac([]byte, []byte) (bool, error)
 }
 
-type Blake2b256 struct{}
-type Blake2b384 struct{}
-type Blake2b512 struct{}
+type Blake2b256 struct {
+	HmacSecret []byte
+}
+type Blake2b384 struct {
+	HmacSecret []byte
+}
+type Blake2b512 struct {
+	HmacSecret []byte
+}
 
-type Sha3256 struct{}
-type Sha3384 struct{}
-type Sha3512 struct{}
+type Sha3256 struct {
+	HmacSecret []byte
+}
+type Sha3384 struct {
+	HmacSecret []byte
+}
+type Sha3512 struct {
+	HmacSecret []byte
+}
 
-type Shake128 struct{}
-type Shake256 struct{}
+type Shake128 struct {
+	HmacSecret []byte
+}
+type Shake256 struct {
+	HmacSecret []byte
+}
 
 ///
 /// Blake2b-256
@@ -43,12 +68,18 @@ func (b *Blake2b256) ValidateHash(plaintext, expectedHash []byte) (bool, error) 
 	return generic.Compare(hashed, expectedHash), nil
 }
 
-func (b *Blake2b256) Hmac(key, data []byte) ([]byte, error) {
-	return hashBlake2b(blake2b.Size256, key, data)
+func (b *Blake2b256) Hmac(data []byte) ([]byte, error) {
+	if b.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+	return hashBlake2b(blake2b.Size256, b.HmacSecret, data)
 }
 
-func (b *Blake2b256) ValidateHmac(key, data, expectedHash []byte) (bool, error) {
-	hashed, err := hashBlake2b(blake2b.Size256, key, data)
+func (b *Blake2b256) ValidateHmac(data, expectedHash []byte) (bool, error) {
+	if b.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+	hashed, err := hashBlake2b(blake2b.Size256, b.HmacSecret, data)
 	if err != nil {
 		return false, err
 	}
@@ -73,12 +104,18 @@ func (b *Blake2b384) ValidateHash(plaintext, expectedHash []byte) (bool, error) 
 	return generic.Compare(hashed, expectedHash), nil
 }
 
-func (b *Blake2b384) Hmac(key, data []byte) ([]byte, error) {
-	return hashBlake2b(blake2b.Size384, key, data)
+func (b *Blake2b384) Hmac(data []byte) ([]byte, error) {
+	if b.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+	return hashBlake2b(blake2b.Size384, b.HmacSecret, data)
 }
 
-func (b *Blake2b384) ValidateHmac(key, data, expectedHash []byte) (bool, error) {
-	hashed, err := hashBlake2b(blake2b.Size384, key, data)
+func (b *Blake2b384) ValidateHmac(data, expectedHash []byte) (bool, error) {
+	if b.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+	hashed, err := hashBlake2b(blake2b.Size384, b.HmacSecret, data)
 	if err != nil {
 		return false, err
 	}
@@ -103,12 +140,18 @@ func (b *Blake2b512) ValidateHash(plaintext, expectedHash []byte) (bool, error) 
 	return generic.Compare(hashed, expectedHash), nil
 }
 
-func (b *Blake2b512) Hmac(key, data []byte) ([]byte, error) {
-	return hashBlake2b(blake2b.Size, key, data)
+func (b *Blake2b512) Hmac(data []byte) ([]byte, error) {
+	if b.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+	return hashBlake2b(blake2b.Size, b.HmacSecret, data)
 }
 
-func (b *Blake2b512) ValidateHmac(key, data, expectedHash []byte) (bool, error) {
-	hashed, err := hashBlake2b(blake2b.Size, key, data)
+func (b *Blake2b512) ValidateHmac(data, expectedHash []byte) (bool, error) {
+	if b.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+	hashed, err := hashBlake2b(blake2b.Size, b.HmacSecret, data)
 	if err != nil {
 		return false, err
 	}
@@ -155,12 +198,18 @@ func (s *Sha3256) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
 	return generic.Compare(hashed, expectedHash), nil
 }
 
-func (s *Sha3256) Hmac(key, data []byte) ([]byte, error) {
-	return hashSha3256(key, data)
+func (s *Sha3256) Hmac(data []byte) ([]byte, error) {
+	if s.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+	return hashSha3256(s.HmacSecret, data)
 }
 
-func (s *Sha3256) ValidateHmac(key, data, expectedHash []byte) (bool, error) {
-	hashed, err := hashSha3256(key, data)
+func (s *Sha3256) ValidateHmac(data, expectedHash []byte) (bool, error) {
+	if s.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+	hashed, err := hashSha3256(s.HmacSecret, data)
 	if err != nil {
 		return false, err
 	}
@@ -208,12 +257,18 @@ func (s *Sha3384) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
 	return generic.Compare(hashed, expectedHash), nil
 }
 
-func (s *Sha3384) Hmac(key, data []byte) ([]byte, error) {
-	return hashSha3384(key, data)
+func (s *Sha3384) Hmac(data []byte) ([]byte, error) {
+	if s.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+	return hashSha3384(s.HmacSecret, data)
 }
 
-func (s *Sha3384) ValidateHmac(key, data, expectedHash []byte) (bool, error) {
-	hashed, err := hashSha3384(key, data)
+func (s *Sha3384) ValidateHmac(data, expectedHash []byte) (bool, error) {
+	if s.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+	hashed, err := hashSha3384(s.HmacSecret, data)
 	if err != nil {
 		return false, err
 	}
@@ -261,12 +316,18 @@ func (s *Sha3512) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
 	return generic.Compare(hashed, expectedHash), nil
 }
 
-func (s *Sha3512) Hmac(key, data []byte) ([]byte, error) {
-	return hashSha3512(key, data)
+func (s *Sha3512) Hmac(data []byte) ([]byte, error) {
+	if s.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+	return hashSha3512(s.HmacSecret, data)
 }
 
-func (s *Sha3512) ValidateHmac(key, data, expectedHash []byte) (bool, error) {
-	hashed, err := hashSha3512(key, data)
+func (s *Sha3512) ValidateHmac(data, expectedHash []byte) (bool, error) {
+	if s.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+	hashed, err := hashSha3512(s.HmacSecret, data)
 	if err != nil {
 		return false, err
 	}

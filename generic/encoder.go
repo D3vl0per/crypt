@@ -8,7 +8,7 @@ import (
 
 type Encoder interface {
 	Encode([]byte) string
-	Decode([]byte) ([]byte, error)
+	Decode(string) ([]byte, error)
 }
 
 // StdEncoding is the standard base64 encoding, as defined in RFC 4648.

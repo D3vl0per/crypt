@@ -30,22 +30,39 @@ func TestRoundTrips(t *testing.T) {
 	genericModes := []int{9, 1, 0, -1, -2}
 	zstdModes := []int{11, 7, 3, 1}
 
-	test := map[int][]byte{
-		0: []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t"),
-		1: []byte("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		2: []byte("10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010"),
+	tests := []struct {
+		name     string
+		data     []byte
+	}{
+		{
+			name: "Random data",
+			data: []byte("PSGIeAYZuvDa2QScJkAI1S824E0fA8M2aAYH3SdMd9mWlETmDIgfbexxT5nwygIDIHFp5A92V6Ke4Sl7FwsOU5ox7IIhReltbLONZutz0EbnN3TiquWz3QJjNlo0HJ1t"),
+		},
+		{
+			name: "Zero data",
+			data: []byte("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+		},
+		{
+			name: "One data",
+			data: []byte("10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010"),
+		},
 	}
-	for _, data := range test {
+
+	for _, test := range tests {
 		for _, level := range zstdModes {
-			testRoundTrip(t, &compression.Zstd{Level: level}, data)
+			t.Run(test.name, func(t *testing.T) {
+				testRoundTrip(t, &compression.Zstd{Level: level}, test.data)
+			})
 		}
 	}
 
-	for _, data := range test {
+	for _, test := range tests {
 		for _, level := range genericModes {
-			testRoundTrip(t, &compression.Flate{Level: level}, data)
-			testRoundTrip(t, &compression.Zlib{Level: level}, data)
-			testRoundTrip(t, &compression.Gzip{Level: level}, data)
+			t.Run(test.name, func(t *testing.T) {
+				testRoundTrip(t, &compression.Flate{Level: level}, test.data)
+				testRoundTrip(t, &compression.Zlib{Level: level}, test.data)
+				testRoundTrip(t, &compression.Gzip{Level: level}, test.data)
+			})
 		}
 	}
 }

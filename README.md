@@ -12,15 +12,16 @@ Crypto suite:
     - /dev/hwrng
     - Encoders
         - Base64
+        - Base32
         - Hex
 - Symmetric
     - XChacha20-poly1305
     - XChacha20-poly1305 Stream (modified age code)
-    - XOR (OTP)
+    - XOR
     - AES-GCM (pending)
 - Asymmetric
     - ed25519
-    - ed448
+    - ed448 
     - x25519 (pending)
 - Hash
     - Blake2b-256

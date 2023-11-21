@@ -3,7 +3,6 @@ package asymmetric
 import (
 	"crypto"
 	"crypto/ed25519"
-	"encoding/hex"
 	"errors"
 	"strconv"
 
@@ -30,11 +29,13 @@ type Signing interface {
 type Ed25519 struct {
 	SecretKey ed25519.PrivateKey
 	PublicKey ed25519.PublicKey
+	Encoder   generic.Encoder
 }
 type Ed448 struct {
 	SecretKey ed448.PrivateKey
 	PublicKey ed448.PublicKey
 	Context   string
+	Encoder   generic.Encoder
 }
 
 func (e *Ed25519) Generate() error {
@@ -58,17 +59,24 @@ func (e *Ed25519) GenerateFromSeed(seed []byte) error {
 }
 
 func (e *Ed25519) Sign(msg []byte) string {
-	return hex.EncodeToString(ed25519.Sign(e.SecretKey, msg))
+	if e.Encoder == nil {
+		return string(ed25519.Sign(e.SecretKey, msg))
+	}
+
+	return e.Encoder.Encode(ed25519.Sign(e.SecretKey, msg))
 }
 
 func (e *Ed25519) Verify(msg []byte, sig string) (bool, error) {
 
-	sig_raw, err := hex.DecodeString(sig)
-	if err != nil {
-		return false, err
+	if e.Encoder == nil {
+		return ed25519.Verify(e.PublicKey, msg, []byte(sig)), nil
+	} else {
+		sig_raw, err := e.Encoder.Decode(sig)
+		if err != nil {
+			return false, err
+		}
+		return ed25519.Verify(e.PublicKey, msg, sig_raw), nil
 	}
-
-	return ed25519.Verify(e.PublicKey, msg, sig_raw), nil
 }
 
 ///
@@ -95,16 +103,23 @@ func (e *Ed448) GenerateFromSeed(seed []byte) error {
 }
 
 func (e *Ed448) Sign(msg []byte) string {
-	return hex.EncodeToString(ed448.Sign(e.SecretKey, msg, e.Context))
+	if e.Encoder == nil {
+		return string(ed448.Sign(e.SecretKey, msg, e.Context))
+	}
+
+	return string(e.Encoder.Encode(ed448.Sign(e.SecretKey, msg, e.Context)))
 }
 
 func (e *Ed448) Verify(msg []byte, sig string) (bool, error) {
-	sig_raw, err := hex.DecodeString(sig)
-	if err != nil {
-		return false, err
+	if e.Encoder == nil {
+		return ed448.Verify(e.PublicKey, msg, []byte(sig), e.Context), nil
+	} else {
+		sig_raw, err := e.Encoder.Decode(sig)
+		if err != nil {
+			return false, err
+		}
+		return ed448.Verify(e.PublicKey, msg, sig_raw, e.Context), nil
 	}
-
-	return ed448.Verify(e.PublicKey, msg, sig_raw, e.Context), nil
 }
 
 func Ed25519ToPublicKey(pub crypto.PublicKey) (ed25519.PublicKey, error) {
