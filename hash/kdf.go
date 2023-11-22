@@ -1,148 +1,243 @@
 package hash
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
-	"io"
+	"hash"
+	"regexp"
+	"strconv"
 
 	"github.com/D3vl0per/crypt/generic"
 	"golang.org/x/crypto/argon2"
-	"golang.org/x/crypto/hkdf"
 )
 
 const (
-	aTime       uint32 = 2
-	aMemory     uint32 = 1 * 64 * 1024
-	aThreads    uint8  = 4
-	aKeyLen     uint32 = 32
-	HKDFKeysize int    = 32
+	AIterations  uint32 = 2
+	AMemory      uint32 = 1 * 64 * 1024
+	AParallelism uint8  = 4
+	AKeyLen      uint32 = 32
+	HKDFKeysize  int    = 32
 )
 
-type keys struct {
-	Salt string
-	Hash string
+type Kdf interface {
+	Hash([]byte) (string, error)
+	Validate([]byte, string) (bool, error)
 }
 
-// Easy to user argon2ID toolset.
-func Argon2IDBase(pass, salt []byte) (keys, error) {
-	hash := argon2.IDKey(pass, salt, aTime, aMemory, aThreads, aKeyLen)
-
-	return keys{
-		Salt: hex.EncodeToString(salt),
-		Hash: hex.EncodeToString(hash),
-	}, nil
+type Hkdf struct {
+	Salt     []byte
+	Key      []byte
+	HashMode func() hash.Hash
+	Encoder  generic.Hex
 }
 
-func Argon2IDRecreate(pass []byte, salt string) ([]byte, error) {
-	salt_raw, err := hex.DecodeString(salt)
-	if err != nil {
-		return []byte{}, err
+type Argon2ID struct {
+	Salt        []byte
+	Memory      uint32
+	Iterations  uint32
+	Parallelism uint8
+	KeyLen      uint32
+}
+
+type argonOutput struct {
+	ArgonString string
+	Hash        []byte
+	HashBase64  string
+	Salt        []byte
+	SaltBase64  string
+}
+
+func (a *Argon2ID) argon2ID(data []byte) argonOutput {
+	hash := argon2.IDKey(data, a.Salt, a.Iterations, a.Memory, a.Parallelism, a.KeyLen)
+
+	hashB64 := base64.RawStdEncoding.EncodeToString(hash)
+	saltB64 := base64.RawStdEncoding.EncodeToString(a.Salt)
+
+	argonString := generic.StrCnct([]string{
+		"$argon2id$v=", strconv.FormatInt(int64(argon2.Version), 10),
+		"$m=", strconv.FormatUint(uint64(a.Memory), 10),
+		",t=", strconv.FormatUint(uint64(a.Iterations), 10),
+		",p=", strconv.FormatInt(int64(a.Parallelism), 10),
+		"$", saltB64,
+		"$", hashB64}...,
+	)
+
+	return argonOutput{
+		ArgonString: argonString,
+		Hash:        hash,
+		HashBase64:  hashB64,
+		Salt:        a.Salt,
+		SaltBase64:  saltB64,
+	}
+}
+
+func (a *Argon2ID) Hash(data []byte) (string, error) {
+	if a.Salt != nil {
+		if len(a.Salt) != 16 {
+			return "", errors.New("salt must be 16 byte long")
+		}
+	} else {
+		var err error
+		a.Salt, err = generic.CSPRNG(16)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	hash_to_validate := argon2.IDKey(pass, salt_raw, aTime, aMemory, aThreads, aKeyLen)
-	return hash_to_validate, nil
+	// Set default values
+	a.Iterations |= AIterations
+	a.Memory |= AMemory
+	a.Parallelism |= AParallelism
+	a.KeyLen |= AKeyLen
+
+	output := a.argon2ID(data)
+	return output.ArgonString, nil
 }
 
-func Argon2ID(pass []byte) (keys, error) {
-	salt, err := generic.CSPRNG(16)
-	if err != nil {
-		return keys{}, err
-	}
-
-	return Argon2IDBase(pass, salt)
-}
-
-func Argon2IDCustomSalt(pass, salt []byte) (keys, error) {
-	if len(salt) != 16 {
-		return keys{}, errors.New("salt length is incorrect")
-	}
-	return Argon2IDBase(pass, salt)
-}
-
-func Argon2IDVerify(pass []byte, salt, hash string) (bool, error) {
-	hash_to_validate, err := Argon2IDRecreate(pass, salt)
+func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
+	parameters, err := a.ExtractParameters(argonString)
 	if err != nil {
 		return false, err
 	}
 
-	hash_raw, err := hex.DecodeString(hash)
+	providedHash, err := base64.RawStdEncoding.DecodeString(parameters["hash"])
 	if err != nil {
-		return false, err
+		return false, errors.New(generic.StrCnct([]string{"hash base64 decode error: ", err.Error()}...))
 	}
 
-	return generic.Compare(hash_raw, hash_to_validate), nil
+	a.Salt, err = base64.RawStdEncoding.DecodeString(parameters["salt"])
+	if err != nil {
+		return false, errors.New(generic.StrCnct([]string{"salt base64 decode error: ", err.Error()}...))
+	}
+
+	if a.Iterations == 0 {
+		parsed, err := strconv.ParseInt(parameters["iterations"], 10, 32)
+		if err != nil {
+			return false, errors.New(generic.StrCnct([]string{"iteration parameter parsing error: ", err.Error()}...))
+		}
+
+		a.Iterations = uint32(parsed)
+	}
+
+	if a.Memory == 0 {
+		parsed, err := strconv.ParseInt(parameters["memory"], 10, 32)
+		if err != nil {
+			return false, errors.New(generic.StrCnct([]string{"memory parameter parsing error: ", err.Error()}...))
+		}
+
+		a.Memory = uint32(parsed)
+	}
+
+	if a.Parallelism == 0 {
+		parsed, err := strconv.ParseInt(parameters["parallelism"], 10, 8)
+		if err != nil {
+			return false, errors.New(generic.StrCnct([]string{"parallelism parameter parsing error: ", err.Error()}...))
+		}
+
+		a.Parallelism = uint8(parsed)
+	}
+
+	if a.KeyLen == 0 {
+		a.KeyLen = AKeyLen
+	}
+
+	hashed := a.argon2ID(data)
+
+	return generic.Compare(hashed.Hash, providedHash), nil
 }
 
-// Easy to user HKDF toolset.
-func HKDFBase(secret, salt, msg []byte) ([]byte, error) {
-	hash := sha256.New
-	kdf := hkdf.New(hash, secret, salt, msg)
+func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
+	pattern := `\$(argon2id)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$`
+
+	re := regexp.MustCompile(pattern)
+
+	matches := re.FindStringSubmatch(input)
+
+	if len(matches) != 8 {
+		return nil, errors.New("invalid input format")
+	}
+
+	parameters := map[string]string{
+		"algorithm":   matches[1],
+		"version":     matches[2],
+		"memory":      matches[3],
+		"iterations":  matches[4],
+		"parallelism": matches[5],
+		"salt":        matches[6],
+		"hash":        matches[7],
+	}
+
+	if len(parameters["algorithm"]) == 0 || !generic.CompareString(parameters["algorithm"], "argon2id") {
+		return map[string]string{}, errors.New(generic.StrCnct([]string{"invalid algorithm: ", parameters["algorithm"]}...))
+	}
+
+	if len(parameters["version"]) == 0 || !generic.CompareString(parameters["version"], strconv.FormatInt(int64(argon2.Version), 10)) {
+		return map[string]string{}, errors.New(generic.StrCnct([]string{"invalid version: ", parameters["version"]}...))
+	}
+
+	if len(parameters["hash"]) == 0 {
+		return map[string]string{}, errors.New("missing hash")
+	}
+
+	if len(parameters["salt"]) == 0 {
+		return map[string]string{}, errors.New("missing salt")
+	}
+
+	return parameters, nil
+}
+
+/*
+func (h *Hkdf) Hash(data []byte) (string, error) {
+	if h.Salt != nil {
+		if len(h.Salt) != h.HashMode().Size() {
+			return "", errors.New(generic.StrCnct([]string{"salt must be", strconv.Itoa(h.HashMode().Size()), " byte long"}...))
+		}
+	} else {
+		var err error
+		h.Salt, err = generic.CSPRNG(int64(h.HashMode().Size()))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if h.HashMode == nil {
+		h.HashMode = sha3.New512
+	}
+
+	kdf := hkdf.New(h.HashMode, h.Key, h.Salt, data)
 
 	key := make([]byte, HKDFKeysize)
 
 	if _, err := io.ReadFull(kdf, key); err != nil {
-		return []byte{}, err
+		return "", err
 	}
-	return key, nil
+
+	return generic.StrCnct([]string{h.Encoder.Encode(key), "#", h.Encoder.Encode(h.Salt)}...), nil
 }
 
-func HKDFRecreate(secret, msg []byte, salt string) ([]byte, error) {
-	salt_raw, err := hex.DecodeString(salt)
-	if err != nil {
-		return []byte{}, err
+func (h *Hkdf) Validate(data []byte, hash string) (bool, error) {
+
+	if len(h.Salt) == 0 || len(h.Salt) != h.HashMode().Size() {
+		return false, errors.New(generic.StrCnct([]string{"salt must be ", strconv.Itoa(h.HashMode().Size()), " byte long"}...))
 	}
 
-	return HKDFBase(secret, salt_raw, msg)
+	if h.HashMode == nil {
+		h.HashMode = sha3.New512
+	}
+
+	kdf := hkdf.New(h.HashMode, h.Key, h.Salt, data)
+
+	key := make([]byte, HKDFKeysize)
+
+	if _, err := io.ReadFull(kdf, key); err != nil {
+		return false, err
+	}
+
+	hash_raw, err := h.Encoder.Decode(hash)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hash_raw, h.Salt), nil
 }
-
-func HKDF(secret, msg []byte) (keys, error) {
-	hash := sha256.New
-	salt, err := generic.CSPRNG(int64(hash().Size()))
-	if err != nil {
-		return keys{}, err
-	}
-
-	key, err := HKDFBase(secret, salt, msg)
-	if err != nil {
-		return keys{}, err
-	}
-
-	return keys{
-		Salt: hex.EncodeToString(salt),
-		Hash: hex.EncodeToString(key),
-	}, nil
-}
-
-/*
-func HKDFCustomSalt(secret, salt, msg []byte) (keys, error) {
-
-		hash := sha256.New
-		if len(salt) != hash().Size(){
-			return keys{}, errors.New("salt length is incorrect")
-		}
-
-		key, err := HKDFBase(secret, salt, msg)
-		if err != nil {
-			return keys{}, err
-		}
-
-		return keys{
-			Salt: hex.EncodeToString(salt),
-			Hash: hex.EncodeToString(key),
-		}, nil
-	}
 */
-func HKDFVerify(secret, msg []byte, salt, hash string) (bool, error) {
-	hash_to_validate, err := HKDFRecreate(secret, msg, salt)
-	if err != nil {
-		return false, err
-	}
-
-	hash_raw, err := hex.DecodeString(hash)
-	if err != nil {
-		return false, err
-	}
-
-	return generic.Compare(hash_raw, hash_to_validate), nil
-}

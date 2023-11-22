@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 )
 
-func SecureDelete(targetPath string, cycle int) error {
+// Secure way to delete file
+func Delete(targetPath string, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}
@@ -24,15 +25,10 @@ func SecureDelete(targetPath string, cycle int) error {
 	}
 
 	zeroBytes := make([]byte, fileInfo.Size())
-	copy(zeroBytes, "0")
 
 	for i := 0; i < cycle; i++ {
 		// Owerwrite with zeros
-		n, err := file.Write([]byte(zeroBytes))
-		if err != nil {
-			return err
-		}
-		err = file.Sync()
+		n, err := WriteAndFlush(file, zeroBytes)
 		if err != nil {
 			return err
 		}
@@ -44,15 +40,10 @@ func SecureDelete(targetPath string, cycle int) error {
 		if err != nil {
 			return err
 		}
-		err = file.Sync()
+		n, err = WriteAndFlush(file, rnd)
 		if err != nil {
 			return err
 		}
-		n, err = file.Write(rnd)
-		if err != nil {
-			return err
-		}
-
 		if n != int(fileInfo.Size()) {
 			return errors.New("rand owerwrite bytes mismatch")
 		}
@@ -65,7 +56,8 @@ func SecureDelete(targetPath string, cycle int) error {
 	return nil
 }
 
-func SecureOverwrite(targetPath string, data []byte, cycle int) error {
+// Secure way to overwrite file
+func Overwrite(targetPath string, data []byte, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}
@@ -82,16 +74,15 @@ func SecureOverwrite(targetPath string, data []byte, cycle int) error {
 		return err
 	}
 
+	if len(data) != int(fileInfo.Size()) {
+		return errors.New("data size must be equal to file size")
+	}
+
 	zeroBytes := make([]byte, fileInfo.Size())
-	copy(zeroBytes, "0")
 
 	for i := 0; i < cycle; i++ {
 		// Owerwrite with zeros
-		n, err := file.Write([]byte(zeroBytes))
-		if err != nil {
-			return err
-		}
-		err = file.Sync()
+		n, err := WriteAndFlush(file, zeroBytes)
 		if err != nil {
 			return err
 		}
@@ -105,11 +96,7 @@ func SecureOverwrite(targetPath string, data []byte, cycle int) error {
 			return err
 		}
 
-		n, err = file.Write(rnd)
-		if err != nil {
-			return err
-		}
-		err = file.Sync()
+		n, err = WriteAndFlush(file, rnd)
 		if err != nil {
 			return err
 		}
@@ -125,7 +112,7 @@ func SecureOverwrite(targetPath string, data []byte, cycle int) error {
 	if err != nil {
 		return err
 	}
-	if n != int(fileInfo.Size()) {
+	if n != len(data) {
 		return errors.New("file overwrite bytes mismatch")
 	}
 	return nil
@@ -163,4 +150,24 @@ func ReadFileContent(path string) ([]byte, error) {
 		return []byte{}, err
 	}
 	return data, nil
+}
+
+func WriteAndFlush(file *os.File, rnd []byte) (n int, err error) {
+	n, err = file.Write(rnd)
+	if err != nil {
+		return 0, err
+	}
+	err = file.Sync()
+	if err != nil {
+		return 0, err
+	}
+	err = file.Truncate(0)
+	if err != nil {
+		return 0, err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
 }

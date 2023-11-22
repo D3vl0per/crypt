@@ -31,6 +31,25 @@ func TestCSPRNGHex(t *testing.T) {
 	}
 }
 
+func TestHWRng(t *testing.T) {
+	length := 32
+	rnd, err := generic.HWRng(int64(length))
+	if err == nil {
+		r.NoError(t, err)
+		r.Len(t, rnd, length)
+		t.Log(hex.EncodeToString(rnd))
+	} else {
+		switch err.Error() {
+		case "open /dev/hwrng: permission denied":
+			t.Skip("Hardware random number generator permission denied")
+		case "open /dev/hwrng: no such file or directory":
+			t.Skip("Hardware random number generator not found")
+		default:
+			t.Log(err)
+		}
+	}
+}
+
 func TestRand(t *testing.T) {
 	reader := generic.Rand()
 	r.Equal(t, reflect.TypeOf(reader), reflect.TypeOf(rand.Reader))

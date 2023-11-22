@@ -1,11 +1,11 @@
 lint: 
-	golangci-lint run
+	golangci-lint run --fix
 
 test:
-	go test -cover ./...
+	go clean -testcache && go test -race -cover ./...
 
 test-v:
-	go test ./... -v
+	go clean -testcache && go test ./... -v
 
 golangci-lint-install:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.0
