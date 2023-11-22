@@ -15,13 +15,13 @@ type Keychain struct {
 	recipients []age.Recipient
 }
 
-type KeychainSetup struct {
+type SetupKeychainParameters struct {
 	SecretKey     string
 	PublicKeys    []string
 	SelfRecipient bool
 }
 
-func SetupKeychain(keychainSetup KeychainSetup) (Keychain, error) {
+func SetupKeychain(keychainSetup SetupKeychainParameters) (Keychain, error) {
 	var keychain Keychain
 
 	identity, err := age.ParseX25519Identity(keychainSetup.SecretKey)

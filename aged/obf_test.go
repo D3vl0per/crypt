@@ -18,7 +18,7 @@ func TestObf(t *testing.T) {
 	r.NoError(t, err)
 	obfuscator := aged.AgeV1Obf{}
 
-	obfKeychain, err := aged.SetupKeychain(aged.KeychainSetup{
+	obfKeychain, err := aged.SetupKeychain(aged.SetupKeychainParameters{
 		SecretKey:     obfKeypair1.String(),
 		PublicKeys:    []string{obfKeypair2.Recipient().String()},
 		SelfRecipient: true,

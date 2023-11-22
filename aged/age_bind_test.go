@@ -33,21 +33,21 @@ func keychainInit(t *testing.T) chains {
 	wrongKeypair, err := aged.GenKeypair()
 	r.NoError(t, err)
 
-	keychain, err := aged.SetupKeychain(aged.KeychainSetup{
+	keychain, err := aged.SetupKeychain(aged.SetupKeychainParameters{
 		SecretKey:     secretKey1.String(),
 		PublicKeys:    []string{publicKey1.Recipient().String(), publicKey2.Recipient().String()},
 		SelfRecipient: true,
 	})
 	r.NoError(t, err)
 
-	keychain2, err := aged.SetupKeychain(aged.KeychainSetup{
+	keychain2, err := aged.SetupKeychain(aged.SetupKeychainParameters{
 		SecretKey:     publicKey1.String(),
 		PublicKeys:    []string{secretKey1.Recipient().String(), publicKey2.Recipient().String()},
 		SelfRecipient: true,
 	})
 	r.NoError(t, err)
 
-	keychainWrong, err := aged.SetupKeychain(aged.KeychainSetup{
+	keychainWrong, err := aged.SetupKeychain(aged.SetupKeychainParameters{
 		SecretKey:     wrongKeypair.String(),
 		PublicKeys:    []string{secretKey1.Recipient().String(), publicKey2.Recipient().String()},
 		SelfRecipient: true,
@@ -84,7 +84,7 @@ func TestKeychain(t *testing.T) {
 func TestKeychainImportExport(t *testing.T) {
 	keychain := keychainInit(t)
 
-	s := aged.KeychainSetup{
+	s := aged.SetupKeychainParameters{
 		SecretKey:     keychain.keychain.KeychainExportSecretKey(),
 		PublicKeys:    keychain.keychain.KeychainExport(),
 		SelfRecipient: true,
@@ -256,7 +256,7 @@ func TestRoundTrips(t *testing.T) {
 func TestWrongSecretKeyKeyringSetup(t *testing.T) {
 	keychain := keychainInit(t)
 
-	s := aged.KeychainSetup{
+	s := aged.SetupKeychainParameters{
 		SecretKey:     "correct horse battery staple",
 		PublicKeys:    []string{keychain.publicKey1.Recipient().String(), keychain.publicKey2.Recipient().String()},
 		SelfRecipient: true,
@@ -269,7 +269,7 @@ func TestWrongSecretKeyKeyringSetup(t *testing.T) {
 func TestWrongPublicKeyKeyringSetup(t *testing.T) {
 	keychain := keychainInit(t)
 
-	s := aged.KeychainSetup{
+	s := aged.SetupKeychainParameters{
 		SecretKey:     keychain.keychain.KeychainExportSecretKey(),
 		PublicKeys:    []string{keychain.publicKey1.Recipient().String(), keychain.publicKey2.Recipient().String(), "correct horse battery staple"},
 		SelfRecipient: true,
@@ -279,91 +279,3 @@ func TestWrongPublicKeyKeyringSetup(t *testing.T) {
 	r.Error(t, err)
 	t.Log(err.Error())
 }
-
-/*
-	func TestEncryptAndDecryptCompress(t *testing.T) {
-		keychains := keychainInit(t)
-
-		cipherData, err := keychains.keychain.Encrypt(plainData, true, false)
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
-
-		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, true, false)
-		r.NoError(t, err2, "Decryption without error")
-		r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
-
-		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, true, false)
-		r.NoError(t, err3, "Decryption two without error")
-		r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
-
-		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, true, false)
-		r.Equal(t, []byte{}, decryptedData3)
-		r.EqualError(t, err4, "no identity matched any of the recipients")
-	}
-
-	func TestEncryptAndDecryptObfuscated(t *testing.T) {
-		keychains := keychainInit(t)
-
-		cipherData, err := keychains.keychain.Encrypt(plainData, false, true)
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Original size:%d Processed size: %d", len(plainData), len(cipherData))
-
-		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, true)
-		r.NoError(t, err2, "Decryption without error")
-		r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
-
-		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, true)
-		r.NoError(t, err3, "Decryption two without error")
-		r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
-
-		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, true)
-		r.Equal(t, []byte{}, decryptedData3)
-		r.EqualError(t, err4, "no identity matched any of the recipients")
-	}
-
-	func TestEncryptAndDecryptBigFile(t *testing.T) {
-		keychains := keychainInit(t)
-
-		plainText, err := generic.CSPRNG(10485760)
-		r.NoError(t, err, "Encryption without error")
-		cipherData, err := keychains.keychain.Encrypt(plainText, false, true)
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Original size:%d Processed size: %d", len(plainText), len(cipherData))
-
-		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, false, true)
-		r.NoError(t, err2, "Decryption without error")
-		r.Equal(t, plainText, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
-
-		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, false, true)
-		r.NoError(t, err3, "Decryption two without error")
-		r.Equal(t, plainText, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
-
-		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, false, true)
-		r.Equal(t, []byte{}, decryptedData3)
-		r.EqualError(t, err4, "no identity matched any of the recipients")
-	}
-
-	func TestEncryptAndDecryptCompressAndObfuscated(t *testing.T) {
-		keychains := keychainInit(t)
-
-		cipherData, err := keychains.keychain.Encrypt(plainData, true, true)
-		r.NoError(t, err, "Encryption without error")
-		t.Logf("Size:%d", len(cipherData))
-
-		decryptedData, err2 := keychains.keychain.Decrypt(cipherData, true, true)
-		r.NoError(t, err2, "Decryption without error")
-		r.Equal(t, plainData, decryptedData, "Decrypted data is equal with the plaintext data by the same keychain")
-
-		decryptedData2, err3 := keychains.keychain2.Decrypt(cipherData, true, true)
-		r.NoError(t, err3, "Decryption two without error")
-		r.Equal(t, plainData, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
-
-		decryptedData3, err4 := keychains.keychainWrong.Decrypt(cipherData, true, true)
-		r.Equal(t, []byte{}, decryptedData3)
-		r.EqualError(t, err4, "no identity matched any of the recipients")
-	}
-
-	func TestEncryptWithPwd(t *testing.T) {
-
-	}
-*/
