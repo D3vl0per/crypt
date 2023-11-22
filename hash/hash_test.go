@@ -266,7 +266,7 @@ func TestNilKeyError(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			hash, err := test.algo.Hmac(test.data)
 			r.ErrorIs(t, err, hasher.ErrHmacSecretNil)
-			r.Len(t, hash, 0)
+			r.Empty(t, hash)
 
 			validate, err := test.algo.ValidateHmac(test.data, test.expected)
 			r.ErrorIs(t, err, hasher.ErrHmacSecretNil)
