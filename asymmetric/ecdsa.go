@@ -14,11 +14,6 @@ import (
 /// Ed25519 Suite
 ///
 
-type Encryption interface {
-	Encrypt()
-	Decrypt()
-}
-
 type Signing interface {
 	Generate() error
 	GenerateFromSeed([]byte) error

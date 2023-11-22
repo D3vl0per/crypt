@@ -1,9 +1,9 @@
 # Go-Crypt (!!! WIP !!!)
 
-High-level API binding to low-level crypto APIs in golang
+This project is a comprehensive toolkit for developers who need to implement various cryptographic operations in their Go applications
 
 
-Crypto suite:
+## Crypto suite:
 - Generic
     - (Secure) Overwrite
     - (Secure) Delete
@@ -24,9 +24,11 @@ Crypto suite:
     - XOR
     - AES-GCM
 - Asymmetric
-    - ed25519
-    - ed448 
-    - x25519 (pending)
+    - ECDSA
+        - ed25519
+        - ed448
+    - ECDH
+        - Curve25519
 - Hash
     - Blake2b-256
     - Blake2b-384
@@ -34,12 +36,12 @@ Crypto suite:
     - SHA3-256
     - SHA3-384
     - SHA3-512
-    - SHAKE-128 (pending)
-    - SHAKE-256 (pending)
-    - go_simhash (pending)
+    - SHAKE-128 (planed)
+    - SHAKE-256 (planed)
+    - go_simhash (planed)
     - Argon2id
-    - Scrypt (pending)
-    - HKDF (pending) 
+    - Scrypt (planed)
+    - HKDF (planed)
 - Compression
     - flate
     - gzip
@@ -49,3 +51,8 @@ Crypto suite:
     - Age encryption suite
     - Age header obfuscation v1
 
+## Disclaimer
+
+This project includes cryptographic operations that have not been independently audited. While every effort has been made to ensure the correctness and security of these operations, they are provided "as is". The author cannot guarantee their security and cannot be held responsible for any consequences arising from their use. If you use these package in your own projects, you do so at your own risk.
+
+It is strongly recommended that you seek an independent security review if you plan to use them in a production environment.
