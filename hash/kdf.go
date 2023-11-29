@@ -116,10 +116,6 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 		a.Parallelism = parameters.Parallelism
 	}
 
-	if a.KeyLen == 0 {
-		a.KeyLen = AKeyLen
-	}
-
 	hashed := a.argon2ID(data)
 
 	return generic.Compare(hashed.Hash, parameters.Hash), nil
@@ -136,7 +132,7 @@ type Parameters struct {
 }
 
 func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {
-	pattern := `\$(argon2id)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$`
+	pattern := `\$(argon2id)\$v=(19)\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$`
 
 	re := regexp.MustCompile(pattern)
 
@@ -151,14 +147,6 @@ func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {
 		Version:   matches[2],
 	}
 
-	if len(parameters.Algorithm) == 0 || !generic.CompareString(parameters.Algorithm, "argon2id") {
-		return Parameters{}, errors.New(generic.StrCnct([]string{"invalid algorithm: ", parameters.Algorithm}...))
-	}
-
-	if len(parameters.Version) == 0 || !generic.CompareString(parameters.Version, strconv.FormatInt(int64(argon2.Version), 10)) {
-		return Parameters{}, errors.New(generic.StrCnct([]string{"invalid version: ", parameters.Version}...))
-	}
-
 	var err error
 
 	parameters.Hash, err = base64.RawStdEncoding.DecodeString(matches[7])
@@ -169,6 +157,10 @@ func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {
 	parameters.Salt, err = base64.RawStdEncoding.DecodeString(matches[6])
 	if err != nil {
 		return Parameters{}, errors.New(generic.StrCnct([]string{"salt base64 decode error: ", err.Error()}...))
+	}
+
+	if len(parameters.Salt) != 16 {
+		return Parameters{}, errors.New("salt must be 16 byte long")
 	}
 
 	memory, err := strconv.ParseInt(matches[3], 10, 32)
