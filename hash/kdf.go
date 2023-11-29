@@ -100,41 +100,20 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 		return false, err
 	}
 
-	providedHash, err := base64.RawStdEncoding.DecodeString(parameters["hash"])
-	if err != nil {
-		return false, errors.New(generic.StrCnct([]string{"hash base64 decode error: ", err.Error()}...))
-	}
-
-	a.Salt, err = base64.RawStdEncoding.DecodeString(parameters["salt"])
-	if err != nil {
-		return false, errors.New(generic.StrCnct([]string{"salt base64 decode error: ", err.Error()}...))
+	if len(a.Salt) == 0 {
+		a.Salt = parameters.Salt
 	}
 
 	if a.Iterations == 0 {
-		parsed, err := strconv.ParseInt(parameters["iterations"], 10, 32)
-		if err != nil {
-			return false, errors.New(generic.StrCnct([]string{"iteration parameter parsing error: ", err.Error()}...))
-		}
-
-		a.Iterations = uint32(parsed)
+		a.Iterations = parameters.Iterations
 	}
 
 	if a.Memory == 0 {
-		parsed, err := strconv.ParseInt(parameters["memory"], 10, 32)
-		if err != nil {
-			return false, errors.New(generic.StrCnct([]string{"memory parameter parsing error: ", err.Error()}...))
-		}
-
-		a.Memory = uint32(parsed)
+		a.Memory = parameters.Memory
 	}
 
 	if a.Parallelism == 0 {
-		parsed, err := strconv.ParseInt(parameters["parallelism"], 10, 8)
-		if err != nil {
-			return false, errors.New(generic.StrCnct([]string{"parallelism parameter parsing error: ", err.Error()}...))
-		}
-
-		a.Parallelism = uint8(parsed)
+		a.Parallelism = parameters.Parallelism
 	}
 
 	if a.KeyLen == 0 {
@@ -143,10 +122,20 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 
 	hashed := a.argon2ID(data)
 
-	return generic.Compare(hashed.Hash, providedHash), nil
+	return generic.Compare(hashed.Hash, parameters.Hash), nil
 }
 
-func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
+type Parameters struct {
+	Algorithm   string
+	Version     string
+	Memory      uint32
+	Iterations  uint32
+	Parallelism uint8
+	Salt        []byte
+	Hash        []byte
+}
+
+func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {
 	pattern := `\$(argon2id)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$`
 
 	re := regexp.MustCompile(pattern)
@@ -154,34 +143,53 @@ func (a *Argon2ID) ExtractParameters(input string) (map[string]string, error) {
 	matches := re.FindStringSubmatch(input)
 
 	if len(matches) != 8 {
-		return nil, errors.New("invalid input format")
+		return Parameters{}, errors.New("invalid input format")
 	}
 
-	parameters := map[string]string{
-		"algorithm":   matches[1],
-		"version":     matches[2],
-		"memory":      matches[3],
-		"iterations":  matches[4],
-		"parallelism": matches[5],
-		"salt":        matches[6],
-		"hash":        matches[7],
+	parameters := Parameters{
+		Algorithm: matches[1],
+		Version:   matches[2],
 	}
 
-	if len(parameters["algorithm"]) == 0 || !generic.CompareString(parameters["algorithm"], "argon2id") {
-		return map[string]string{}, errors.New(generic.StrCnct([]string{"invalid algorithm: ", parameters["algorithm"]}...))
+	if len(parameters.Algorithm) == 0 || !generic.CompareString(parameters.Algorithm, "argon2id") {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"invalid algorithm: ", parameters.Algorithm}...))
 	}
 
-	if len(parameters["version"]) == 0 || !generic.CompareString(parameters["version"], strconv.FormatInt(int64(argon2.Version), 10)) {
-		return map[string]string{}, errors.New(generic.StrCnct([]string{"invalid version: ", parameters["version"]}...))
+	if len(parameters.Version) == 0 || !generic.CompareString(parameters.Version, strconv.FormatInt(int64(argon2.Version), 10)) {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"invalid version: ", parameters.Version}...))
 	}
 
-	if len(parameters["hash"]) == 0 {
-		return map[string]string{}, errors.New("missing hash")
+	var err error
+
+	parameters.Hash, err = base64.RawStdEncoding.DecodeString(matches[7])
+	if err != nil {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"hash base64 decode error: ", err.Error()}...))
 	}
 
-	if len(parameters["salt"]) == 0 {
-		return map[string]string{}, errors.New("missing salt")
+	parameters.Salt, err = base64.RawStdEncoding.DecodeString(matches[6])
+	if err != nil {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"salt base64 decode error: ", err.Error()}...))
 	}
+
+	memory, err := strconv.ParseInt(matches[3], 10, 32)
+	if err != nil {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"memory parameter parsing error: ", err.Error()}...))
+	}
+
+	parameters.Memory = uint32(memory)
+
+	iterations, err := strconv.ParseInt(matches[4], 10, 32)
+	if err != nil {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"iteration parameter parsing error: ", err.Error()}...))
+	}
+	parameters.Iterations = uint32(iterations)
+
+	parallelism, err := strconv.ParseInt(matches[5], 10, 8)
+	if err != nil {
+		return Parameters{}, errors.New(generic.StrCnct([]string{"parallelism parameter parsing error: ", err.Error()}...))
+	}
+
+	parameters.Parallelism = uint8(parallelism)
 
 	return parameters, nil
 }

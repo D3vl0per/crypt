@@ -75,7 +75,11 @@ func TestArgon2ID(t *testing.T) {
 			r.NoError(t, err)
 			t.Log("Argon parameters: ", parameters)
 
-			isValid, err := tt.argon.Validate(data, argonString)
+			validator := hasher.Argon2ID{
+				KeyLen: tt.argon.KeyLen,
+			}
+
+			isValid, err := validator.Validate(data, argonString)
 			r.NoError(t, err)
 			a.True(t, isValid)
 		})
