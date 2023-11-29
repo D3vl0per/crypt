@@ -43,7 +43,7 @@ func TestArgon2ID(t *testing.T) {
 		{
 			name: "Custom key length",
 			argon: hasher.Argon2ID{
-				KeyLen: 64,
+				KeyLen: 1,
 			},
 		},
 		{
@@ -75,7 +75,11 @@ func TestArgon2ID(t *testing.T) {
 			r.NoError(t, err)
 			t.Log("Argon parameters: ", parameters)
 
-			isValid, err := tt.argon.Validate(data, argonString)
+			validator := hasher.Argon2ID{
+				KeyLen: tt.argon.KeyLen,
+			}
+
+			isValid, err := validator.Validate(data, argonString)
 			r.NoError(t, err)
 			a.True(t, isValid)
 		})
@@ -107,7 +111,7 @@ func TestArgon2IDWrongParameters(t *testing.T) {
 		{
 			name:        "Fault test, version is 18",
 			argonString: "$argon2id$v=18$m=10,t=2,p=1$SVJYMU1hdXB4czFTT3E4dw$+KPtJ/q0tnhCck+sbDva6g",
-			err:         "invalid version",
+			err:         "invalid input format",
 		},
 		{
 			name:        "Fault test, version is asdasd",
@@ -158,6 +162,11 @@ func TestArgon2IDWrongParameters(t *testing.T) {
 			name:        "Fault test, parallelism NaN",
 			argonString: "$argon2id$v=19$m=10,t=2,p=asr$SVJYMU1hdXB4czFTT3E4dw$+KPtJ/q0tnhCck+sbDva6g",
 			err:         "invalid input format",
+		},
+		{
+			name:        "Fault test, salt is shorter than 16 bytes",
+			argonString: "$argon2id$v=19$m=10,t=2,p=1$pB2aWKPIqITWA7tofI9y$+KPtJ/q0tnhCck+sbDva6g",
+			err:         "salt must be 16 byte long",
 		},
 	}
 

@@ -1,3 +1,4 @@
 lint
 .env
 coverage.html
+coverage.txt
