@@ -137,7 +137,7 @@ func (e *PKCS) Import() error {
 		return err
 	}
 	// nolint:errcheck
-	pkC := pkRaw.(crypto.PublicKey)
+	pkC := pkRaw.(crypto.PrivateKey)
 	// nolint:errcheck
 	e.SecretKey = pkC.(ed25519.PrivateKey)
 	return nil
