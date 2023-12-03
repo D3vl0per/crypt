@@ -18,7 +18,10 @@ type Signing interface {
 	Generate() error
 	GenerateFromSeed([]byte) error
 	Sign([]byte) string
-	Verify([]byte, []byte) string
+	Verify([]byte, string) (bool, error)
+	GetSecretKey() []byte
+	GetPublicKey() []byte
+	GetEncoder() generic.Encoder
 }
 
 type Ed25519 struct {
@@ -74,6 +77,18 @@ func (e *Ed25519) Verify(msg []byte, sig string) (bool, error) {
 	}
 }
 
+func (e *Ed25519) GetSecretKey() []byte {
+	return e.SecretKey
+}
+
+func (e *Ed25519) GetPublicKey() []byte {
+	return e.PublicKey
+}
+
+func (e *Ed25519) GetEncoder() generic.Encoder {
+	return e.Encoder
+}
+
 ///
 /// ED448 Suite
 ///
@@ -115,6 +130,18 @@ func (e *Ed448) Verify(msg []byte, sig string) (bool, error) {
 		}
 		return ed448.Verify(e.PublicKey, msg, sig_raw, e.Context), nil
 	}
+}
+
+func (e *Ed448) GetSecretKey() []byte {
+	return e.SecretKey
+}
+
+func (e *Ed448) GetPublicKey() []byte {
+	return e.PublicKey
+}
+
+func (e *Ed448) GetEncoder() generic.Encoder {
+	return e.Encoder
 }
 
 func Ed25519ToPublicKey(pub crypto.PublicKey) (ed25519.PublicKey, error) {
