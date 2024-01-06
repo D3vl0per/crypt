@@ -18,7 +18,7 @@ type compressor struct {
 	modes      []int
 }
 
-func compressionArlgorithms() ([]compressor) {
+func compressionArlgorithms() []compressor {
 	genericModes := []int{compression.BestCompression, compression.BestSpeed, compression.NoCompression, compression.DefaultCompression, compression.HuffmanOnly}
 	zstdModes := []int{compression.ZstdSpeedBestCompression, compression.ZstdSpeedBetterCompression, compression.ZstdSpeedDefault, compression.ZstdSpeedFastest}
 	brotliModes := []int{compression.BrotliBestCompression, compression.BrotliDefaultCompression, compression.BrotliBestSpeed}
@@ -58,11 +58,10 @@ type compressionSample struct {
 	data []byte
 }
 
-func compressionSamples() ([]compressionSample) {
+func compressionSamples() []compressionSample {
 
 	ed25519 := asymmetric.Ed25519{}
-	err := ed25519.Generate()
-	if err != nil {
+	if err := ed25519.Generate(); err != nil {
 		panic(err)
 	}
 
@@ -94,8 +93,6 @@ func compressionSamples() ([]compressionSample) {
 	}
 	return testData
 }
-
-
 
 func BenchmarkRoundTrip(b *testing.B) {
 	compressors := compressionArlgorithms()

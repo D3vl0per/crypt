@@ -213,7 +213,6 @@ func TestRoundTrips(t *testing.T) {
 				Compress:    true,
 			},
 		},
-
 	}
 
 	for _, tt := range tests {

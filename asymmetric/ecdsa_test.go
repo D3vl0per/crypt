@@ -259,4 +259,3 @@ func BenchmarkEcdsa(b *testing.B) {
 		}
 	})
 }
-

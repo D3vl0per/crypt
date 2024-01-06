@@ -19,13 +19,13 @@ type Symmetric interface {
 
 type SecretBox struct{}
 
-func (s *SecretBox) Encrypt(secret, plaintext []byte) ([]byte, error) {
-	if len(secret) != 32 {
-		return nil, errors.New("wrong secret size")
+func (s *SecretBox) Encrypt(key, payload []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("invalid key size")
 	}
 
 	var secretKey [32]byte
-	subtle.ConstantTimeCopy(1, secretKey[:], secret)
+	subtle.ConstantTimeCopy(1, secretKey[:], key)
 
 	nonce_raw, err := generic.CSPRNG(24)
 	if err != nil {
@@ -35,21 +35,21 @@ func (s *SecretBox) Encrypt(secret, plaintext []byte) ([]byte, error) {
 	var nonce [24]byte
 	subtle.ConstantTimeCopy(1, nonce[:], nonce_raw)
 
-	return secretbox.Seal(nonce[:], plaintext, &nonce, &secretKey), nil
+	return secretbox.Seal(nonce[:], payload, &nonce, &secretKey), nil
 }
 
-func (s *SecretBox) Decrypt(secret, ciphertext []byte) ([]byte, error) {
-	if len(secret) != 32 {
-		return nil, errors.New("wrong secret size")
+func (s *SecretBox) Decrypt(key, payload []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("invalid key size")
 	}
 
 	var secretKey [32]byte
-	subtle.ConstantTimeCopy(1, secretKey[:], secret)
+	subtle.ConstantTimeCopy(1, secretKey[:], key)
 
 	var nonce [24]byte
-	subtle.ConstantTimeCopy(1, nonce[:], ciphertext[:24])
+	subtle.ConstantTimeCopy(1, nonce[:], payload[:24])
 
-	decrypted, ok := secretbox.Open(nil, ciphertext[24:], &nonce, &secretKey)
+	decrypted, ok := secretbox.Open(nil, payload[24:], &nonce, &secretKey)
 	if !ok {
 		return nil, errors.New("decryption error")
 	}
@@ -59,7 +59,10 @@ func (s *SecretBox) Decrypt(secret, ciphertext []byte) ([]byte, error) {
 
 type AesCTR struct{}
 
-func (a *AesCTR) Encrypt(key, data []byte) ([]byte, error) {
+func (a *AesCTR) Encrypt(key, payload []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("invalid key size")
+	}
 
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
@@ -70,7 +73,7 @@ func (a *AesCTR) Encrypt(key, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ciphertext := make([]byte, aes.BlockSize+len(data))
+	ciphertext := make([]byte, aes.BlockSize+len(payload))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, err
@@ -81,18 +84,22 @@ func (a *AesCTR) Encrypt(key, data []byte) ([]byte, error) {
 	}
 
 	stream := cipher.NewCTR(block, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], data)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], payload)
 
 	return ciphertext, nil
 }
 
-func (a *AesCTR) Decrypt(key, data []byte) ([]byte, error) {
+func (a *AesCTR) Decrypt(key, payload []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("invalid key size")
+	}
+
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}
 
-	if len(data) < aes.BlockSize {
-		return nil, errors.New("ciphertext too short")
+	if len(payload) < aes.BlockSize {
+		return nil, errors.New("payload is too short")
 	}
 
 	block, err := aes.NewCipher(key)
@@ -100,22 +107,26 @@ func (a *AesCTR) Decrypt(key, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	payload := make([]byte, len(data)-aes.BlockSize)
-	stream := cipher.NewCTR(block, data[:aes.BlockSize])
-	stream.XORKeyStream(payload, data[aes.BlockSize:])
+	plaintext := make([]byte, len(payload)-aes.BlockSize)
+	stream := cipher.NewCTR(block, payload[:aes.BlockSize])
+	stream.XORKeyStream(plaintext, payload[aes.BlockSize:])
 
-	return payload, nil
+	return plaintext, nil
 }
 
 type AesCBC struct{}
 
-func (a *AesCBC) Encrypt(key, data []byte) ([]byte, error) {
+func (a *AesCBC) Encrypt(key, payload []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("invalid key size")
+	}
+
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}
 
-	if len(data)%aes.BlockSize != 0 {
-		return nil, errors.New("plaintext is not a multiple of the block size")
+	if len(payload)%aes.BlockSize != 0 {
+		return nil, errors.New("payload is not a multiple of the block size")
 	}
 
 	block, err := aes.NewCipher(key)
@@ -123,7 +134,7 @@ func (a *AesCBC) Encrypt(key, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ciphertext := make([]byte, aes.BlockSize+len(data))
+	ciphertext := make([]byte, aes.BlockSize+len(payload))
 	iv := ciphertext[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, err
@@ -134,21 +145,21 @@ func (a *AesCBC) Encrypt(key, data []byte) ([]byte, error) {
 	}
 
 	mode := cipher.NewCBCEncrypter(block, iv)
-	mode.CryptBlocks(ciphertext[aes.BlockSize:], data)
+	mode.CryptBlocks(ciphertext[aes.BlockSize:], payload)
 	return ciphertext, nil
 }
 
-func (a *AesCBC) Decrypt(key, data []byte) ([]byte, error) {
+func (a *AesCBC) Decrypt(key, payload []byte) ([]byte, error) {
+	if len(key) != 32 {
+		return nil, errors.New("invalid key size")
+	}
+
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}
 
-	if len(data) < aes.BlockSize {
-		return nil, errors.New("ciphertext too short")
-	}
-
-	if len(data)%aes.BlockSize != 0 {
-		return nil, errors.New("ciphertext is not a multiple of the block size")
+	if len(payload)%aes.BlockSize != 0 || len(payload) < aes.BlockSize {
+		return nil, errors.New("payload is not a multiple of the block size")
 	}
 
 	block, err := aes.NewCipher(key)
@@ -156,12 +167,12 @@ func (a *AesCBC) Decrypt(key, data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	ciphertext := data[aes.BlockSize:]
-	iv := data[:aes.BlockSize]
+	ciphertext := payload[aes.BlockSize:]
+	iv := payload[:aes.BlockSize]
 
-	payload := make([]byte, len(data)-aes.BlockSize)
+	plaintext := make([]byte, len(payload)-aes.BlockSize)
 	mode := cipher.NewCBCDecrypter(block, iv)
-	mode.CryptBlocks(payload, ciphertext)
+	mode.CryptBlocks(plaintext, ciphertext)
 
-	return payload, nil
+	return plaintext, nil
 }
