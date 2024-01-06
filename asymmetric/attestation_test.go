@@ -24,7 +24,7 @@ func TestMinimalisticAttestation(t *testing.T) {
 		payload    []byte
 	}{
 		{
-			name: "Minimalistic",
+			name: "Minimalistic with known padding",
 			attestator: asymmetric.Minimalistic{
 				Suite: &asymmetric.Ed25519{
 					SecretKey: ecdsa.SecretKey,
@@ -38,7 +38,7 @@ func TestMinimalisticAttestation(t *testing.T) {
 			payload: []byte("Correct Horse Battery Staple"),
 		},
 		{
-			name: "Base64 encoder",
+			name: "Base64 encoder with known separator",
 			attestator: asymmetric.Minimalistic{
 				Suite: &asymmetric.Ed25519{
 					SecretKey: ecdsa.SecretKey,
@@ -55,7 +55,7 @@ func TestMinimalisticAttestation(t *testing.T) {
 			payload: []byte("Correct Horse Battery Staple"),
 		},
 		{
-			name: "Blake2b-512",
+			name: "Blake2b-512 with known padding",
 			attestator: asymmetric.Minimalistic{
 				Suite: &asymmetric.Ed25519{
 					SecretKey: ecdsa.SecretKey,
@@ -70,7 +70,7 @@ func TestMinimalisticAttestation(t *testing.T) {
 			payload: []byte("Correct Horse Battery Staple"),
 		},
 		{
-			name: "Blake2b-512-HMAC",
+			name: "Blake2b-512-HMAC with known padding",
 			attestator: asymmetric.Minimalistic{
 				Suite: &asymmetric.Ed25519{
 					SecretKey: ecdsa.SecretKey,
@@ -114,7 +114,7 @@ func TestFaultMinimalisticAttestation(t *testing.T) {
 	r.NoError(t, err)
 
 	// salt, err := generic.CSPRNG(32)
-	//r.NoError(t, err)
+	// r.NoError(t, err)
 
 	tests := []struct {
 		name                string

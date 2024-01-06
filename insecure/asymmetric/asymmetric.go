@@ -1,6 +1,7 @@
 package asymmetric
 
 import (
+	"crypto/rand"
 	"crypto/subtle"
 	"errors"
 
@@ -18,7 +19,7 @@ type keypairs struct {
 }
 
 func GenerateBoxKeypair() (keypairs, error) {
-	pk, sk, err := box.GenerateKey(generic.Rand())
+	pk, sk, err := box.GenerateKey(rand.Reader)
 	if err != nil {
 		return keypairs{}, nil
 	}
@@ -41,7 +42,7 @@ func EncryptBox(senderSK, recipientPK, plaintext []byte) ([]byte, error) {
 
 	nonce_raw, err := generic.CSPRNG(24)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	var nonce [24]byte
@@ -63,7 +64,7 @@ func DecryptBox(senderPK, recipientSK, ciphertext []byte) ([]byte, error) {
 	subtle.ConstantTimeCopy(1, decryptNonce[:], ciphertext[:24])
 	decrypted, ok := box.OpenAfterPrecomputation(nil, ciphertext[24:], &decryptNonce, &sharedDecryptKey)
 	if !ok {
-		return []byte{}, errors.New("decryption error")
+		return nil, errors.New("decryption error")
 	}
 	return decrypted, nil
 }

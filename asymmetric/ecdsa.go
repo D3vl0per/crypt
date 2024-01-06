@@ -3,6 +3,7 @@ package asymmetric
 import (
 	"crypto"
 	"crypto/ed25519"
+	"crypto/rand"
 	"errors"
 	"strconv"
 
@@ -38,7 +39,7 @@ type Ed448 struct {
 
 func (e *Ed25519) Generate() error {
 	var err error
-	e.PublicKey, e.SecretKey, err = ed25519.GenerateKey(generic.Rand())
+	e.PublicKey, e.SecretKey, err = ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (e *Ed25519) GetEncoder() generic.Encoder {
 
 func (e *Ed448) Generate() error {
 	var err error
-	e.PublicKey, e.SecretKey, err = ed448.GenerateKey(generic.Rand())
+	e.PublicKey, e.SecretKey, err = ed448.GenerateKey(rand.Reader)
 	if err != nil {
 		return err
 	}

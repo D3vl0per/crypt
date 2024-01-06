@@ -213,6 +213,7 @@ func TestRoundTrips(t *testing.T) {
 				Compress:    true,
 			},
 		},
+
 	}
 
 	for _, tt := range tests {
@@ -236,7 +237,7 @@ func TestRoundTrips(t *testing.T) {
 			r.Equal(t, tt.parameter.Data, decryptedData2, "Decrypted data is equal with the plaintext data by different valid keychain")
 
 			decryptedData3, err4 := config.keychainWrong.Decrypt(decryptParam)
-			r.Equal(t, []byte{}, decryptedData3)
+			r.Nil(t, decryptedData3)
 			r.EqualError(t, err4, "no identity matched any of the recipients")
 
 			pwd, err := generic.CSPRNG(32)

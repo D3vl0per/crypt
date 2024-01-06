@@ -142,12 +142,12 @@ func ReadFileContent(path string) ([]byte, error) {
 	// #do-not-check-gosec
 	j, err := os.Open(path)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	defer j.Close()
 	data, err := io.ReadAll(j)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	return data, nil
 }
