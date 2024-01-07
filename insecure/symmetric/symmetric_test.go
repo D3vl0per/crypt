@@ -51,14 +51,14 @@ func TestE2E(t *testing.T) {
 func TestE2EFault(t *testing.T) {
 
 	type cases struct {
-		name string
+		name        string
 		key         []byte
 		payload     []byte
 		expectedErr string
 	}
 
 	type testStructue struct {
-		name   string
+		name    string
 		sym     symmetric.Symmetric
 		encrypt []cases
 		decrypt []cases
@@ -66,25 +66,25 @@ func TestE2EFault(t *testing.T) {
 
 	testCases := []testStructue{
 		{
-			name:  "NaClSecretBox",
-			sym: &symmetric.SecretBox{},
+			name: "NaClSecretBox",
+			sym:  &symmetric.SecretBox{},
 			encrypt: []cases{
-				{	
-					name: 	  	"key size 31, invalid key size",
+				{
+					name:        "key size 31, invalid key size",
 					key:         generateKey(t, 31),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 			},
 			decrypt: []cases{
-				{	
-					name: 	  	"key size 31, invalid key size",
+				{
+					name:        "key size 31, invalid key size",
 					key:         generateKey(t, 31),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"non-decryptable payload, decryption error",
+					name:        "non-decryptable payload, decryption error",
 					key:         make([]byte, 32),
 					payload:     make([]byte, 32),
 					expectedErr: "decryption error",
@@ -98,43 +98,43 @@ func TestE2EFault(t *testing.T) {
 			},
 		},
 		{
-			name:  "AES-CTR",
-			sym: &symmetric.AesCTR{},
+			name: "AES-CTR",
+			sym:  &symmetric.AesCTR{},
 			encrypt: []cases{
-				{	
-					name: 	  	"key size 31, invalid key size",
+				{
+					name:        "key size 31, invalid key size",
 					key:         generateKey(t, 31),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key size 33, invalid key size",
+					name:        "key size 33, invalid key size",
 					key:         generateKey(t, 33),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key is all zero",
+					name:        "key is all zero",
 					key:         make([]byte, 32),
 					payload:     make([]byte, 16),
 					expectedErr: "key is all zero",
 				},
 			},
 			decrypt: []cases{
-				{	
-					name: 	  	"key size 31, invalid key size",
+				{
+					name:        "key size 31, invalid key size",
 					key:         generateKey(t, 31),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key size 33, invalid key size",
+					name:        "key size 33, invalid key size",
 					key:         generateKey(t, 33),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key is all zero",
+					name:        "key is all zero",
 					key:         make([]byte, 32),
 					payload:     make([]byte, 16),
 					expectedErr: "key is all zero",
@@ -148,67 +148,67 @@ func TestE2EFault(t *testing.T) {
 			},
 		},
 		{
-			name:  "AES-CBC",
-			sym: &symmetric.AesCBC{},
+			name: "AES-CBC",
+			sym:  &symmetric.AesCBC{},
 			encrypt: []cases{
 				{
-					name: 	  	"key size 31, invalid key size",
+					name:        "key size 31, invalid key size",
 					key:         generateKey(t, 31),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key size 33, invalid key size",
+					name:        "key size 33, invalid key size",
 					key:         generateKey(t, 33),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key size 15, invalid key size",
+					name:        "key size 15, invalid key size",
 					key:         generateKey(t, 15),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key is all zero",
+					name:        "key is all zero",
 					key:         make([]byte, 32),
 					payload:     make([]byte, 16),
 					expectedErr: "key is all zero",
-				}, 
+				},
 				{
-					name: 	  	"payload is not a multiple of the block size",
+					name:        "payload is not a multiple of the block size",
 					key:         generateKey(t, 32),
 					payload:     make([]byte, 14),
 					expectedErr: "payload is not a multiple of the block size",
 				},
 			},
 			decrypt: []cases{
-				{	
-					name: 	  	"key size 31, invalid key size",
+				{
+					name:        "key size 31, invalid key size",
 					key:         generateKey(t, 31),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key size 33, invalid key size",
+					name:        "key size 33, invalid key size",
 					key:         generateKey(t, 33),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key size 15, invalid key size",
+					name:        "key size 15, invalid key size",
 					key:         generateKey(t, 15),
 					payload:     make([]byte, 16),
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  	"key is all zero",
+					name:        "key is all zero",
 					key:         make([]byte, 32),
 					payload:     make([]byte, 16),
 					expectedErr: "key is all zero",
-				}, 
+				},
 				{
-					name: 	  	"payload is not a multiple of the block size",
+					name:        "payload is not a multiple of the block size",
 					key:         generateKey(t, 32),
 					payload:     make([]byte, 14),
 					expectedErr: "payload is not a multiple of the block size",
@@ -218,20 +218,24 @@ func TestE2EFault(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		for _, c := range tc.encrypt {
-			t.Run(tc.name+ "/encryption/" + c.name, func(t *testing.T) {
-				ciphertext, err := tc.sym.Encrypt(c.key, c.payload)
-				r.Nil(t, ciphertext)
-				r.ErrorContains(t, err, c.expectedErr)
-			})
-		}
-		for _, c := range tc.decrypt {
-			t.Run(tc.name+ "/decryption/" + c.name, func(t *testing.T) {
-				plaintext, err := tc.sym.Decrypt(c.key, c.payload)
-				r.Nil(t, plaintext)
-				r.ErrorContains(t, err, c.expectedErr)
-			})
-		}
+		t.Run(tc.name+"/encryption", func(t *testing.T) {
+			for _, c := range tc.encrypt {
+				t.Run(c.name, func(t *testing.T) {
+					ciphertext, err := tc.sym.Encrypt(c.key, c.payload)
+					r.Nil(t, ciphertext)
+					r.ErrorContains(t, err, c.expectedErr)
+				})
+			}
+		})
+		t.Run(tc.name+"/decryption", func(t *testing.T) {
+			for _, c := range tc.decrypt {
+				t.Run(c.name, func(t *testing.T) {
+					plaintext, err := tc.sym.Decrypt(c.key, c.payload)
+					r.Nil(t, plaintext)
+					r.ErrorContains(t, err, c.expectedErr)
+				})
+			}
+		})
 	}
 }
 

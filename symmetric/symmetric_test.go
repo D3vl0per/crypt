@@ -374,41 +374,49 @@ func TestE2EEFault(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		for _, c := range tc.encrypt {
-			t.Run(tc.name+"/encryption/"+c.name, func(t *testing.T) {
-				ciphertext, err := tc.sym.Encrypt(c.key, c.payload)
-				r.Nil(t, ciphertext)
-				r.ErrorContains(t, err, c.expectedErr)
-			})
-		}
-		for _, c := range tc.decrypt {
-			t.Run(tc.name+"/decryption/"+c.name, func(t *testing.T) {
-				plaintext, err := tc.sym.Decrypt(c.key, c.payload)
-				r.Nil(t, plaintext)
-				r.ErrorContains(t, err, c.expectedErr)
-			})
-		}
+		t.Run(tc.name + "/encryption", func(t *testing.T) {
+			for _, c := range tc.encrypt {
+				t.Run(c.name, func(t *testing.T) {
+					ciphertext, err := tc.sym.Encrypt(c.key, c.payload)
+					r.Nil(t, ciphertext)
+					r.ErrorContains(t, err, c.expectedErr)
+				})
+			}
+		})
+		t.Run(tc.name + "/decryption", func(t *testing.T) {
+			for _, c := range tc.decrypt {
+				t.Run(c.name, func(t *testing.T) {
+					plaintext, err := tc.sym.Decrypt(c.key, c.payload)
+					r.Nil(t, plaintext)
+					r.ErrorContains(t, err, c.expectedErr)
+				})
+			}
+		})
 	}
 
 	for _, tc := range testCasesStream {
-		for _, c := range tc.encrypt {
-			t.Run(tc.name+"/encryption/"+c.name, func(t *testing.T) {
-				out := &bytes.Buffer{}
-				in := bytes.NewReader(c.payload)
+		t.Run(tc.name + "/encryption", func(t *testing.T) {
+			for _, c := range tc.encrypt {
+				t.Run(c.name, func(t *testing.T) {
+					out := &bytes.Buffer{}
+					in := bytes.NewReader(c.payload)
 
-				err := c.sym.Encrypt(in, out)
-				r.ErrorContains(t, err, c.expectedErr)
-			})
-		}
-		for _, c := range tc.decrypt {
-			t.Run(tc.name+"/decryption/"+c.name, func(t *testing.T) {
-				out := &bytes.Buffer{}
-				in := bytes.NewReader(c.payload)
+					err := c.sym.Encrypt(in, out)
+					r.ErrorContains(t, err, c.expectedErr)
+				})
+			}
+		})
+		t.Run(tc.name + "/decryption", func(t *testing.T) {
+			for _, c := range tc.decrypt {
+				t.Run(c.name, func(t *testing.T) {
+					out := &bytes.Buffer{}
+					in := bytes.NewReader(c.payload)
 
-				err := c.sym.Decrypt(in, out)
-				r.ErrorContains(t, err, c.expectedErr)
-			})
-		}
+					err := c.sym.Decrypt(in, out)
+					r.ErrorContains(t, err, c.expectedErr)
+				})
+			}
+		})
 	}
 
 }
