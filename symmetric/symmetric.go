@@ -41,8 +41,8 @@ type XChaCha20Stream struct {
 
 // XChaCha20-Poly1305
 func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
-	if len(key) != chacha20poly1305.KeySize {
-		return nil, errors.New("wrong key size")
+	if generic.AllZero(key) {
+		return nil, errors.New("key is all zero")
 	}
 
 	aead, err := chacha20poly1305.NewX(key)
@@ -64,8 +64,8 @@ func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
 }
 
 func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
-	if len(key) != chacha20poly1305.KeySize {
-		return nil, errors.New("wrong secret size")
+	if generic.AllZero(key) {
+		return nil, errors.New("key is all zero")
 	}
 
 	aead, err := chacha20poly1305.NewX(key)
@@ -103,10 +103,6 @@ func (x *Xor) Encrypt(key, payload []byte) ([]byte, error) {
 	xored := make([]byte, len(payload))
 	subtle.XORBytes(xored, payload, key)
 
-	if len(payload) != len(xored) || len(key) != len(xored) {
-		return nil, errors.New("xored array length mismatch")
-	}
-
 	if generic.AllZero(xored) {
 		return nil, errors.New("xored array has just zeroes")
 	}
@@ -120,6 +116,10 @@ func (x *Xor) Decrypt(key, payload []byte) ([]byte, error) {
 
 // XChaCha20-Poly1305 Age Stream
 func (x *XChaCha20Stream) Encrypt(in io.Reader, out io.Writer) error {
+	if generic.AllZero(x.Key) {
+		return errors.New("key is all zero")
+	}
+
 	if len(x.Key) != chacha20poly1305.KeySize {
 		return errors.New("wrong key size")
 	}
@@ -147,6 +147,10 @@ func (x *XChaCha20Stream) Encrypt(in io.Reader, out io.Writer) error {
 }
 
 func (x *XChaCha20Stream) Decrypt(in io.Reader, out io.Writer) error {
+	if generic.AllZero(x.Key) {
+		return errors.New("key is all zero")
+	}
+	
 	if len(x.Key) != chacha20poly1305.KeySize {
 		return errors.New("wrong key size")
 	}
@@ -178,7 +182,7 @@ type stream struct {
 func (s *stream) reader(src io.Reader, key []byte) (io.Reader, error) {
 	nonce := make([]byte, chacha20poly1305.NonceSizeX)
 	if _, err := io.ReadFull(src, nonce); err != nil {
-		return nil, errors.New("failed to read nonce")
+		return nil, err
 	}
 
 	streamerKey, err := s.key(key, nonce)
@@ -228,10 +232,6 @@ func (a *AesGCM) Encrypt(key, payload []byte) ([]byte, error) {
 		return nil, errors.New("key is all zero")
 	}
 
-	if len(key) != 32 {
-		return nil, errors.New("wrong key size, must be 32 bytes")
-	}
-
 	aes, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -257,10 +257,6 @@ func (a *AesGCM) Encrypt(key, payload []byte) ([]byte, error) {
 func (a *AesGCM) Decrypt(key, ciphertext []byte) ([]byte, error) {
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
-	}
-
-	if len(key) != 32 {
-		return nil, errors.New("wrong key size, must be 32 bytes")
 	}
 
 	aes, err := aes.NewCipher(key)

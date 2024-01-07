@@ -42,9 +42,12 @@ func (s *SecretBox) Decrypt(key, payload []byte) ([]byte, error) {
 	if len(key) != 32 {
 		return nil, errors.New("invalid key size")
 	}
-
 	var secretKey [32]byte
 	subtle.ConstantTimeCopy(1, secretKey[:], key)
+
+	if len(payload) < 24 {
+		return nil, errors.New("payload is too short")
+	}
 
 	var nonce [24]byte
 	subtle.ConstantTimeCopy(1, nonce[:], payload[:24])
@@ -60,10 +63,6 @@ func (s *SecretBox) Decrypt(key, payload []byte) ([]byte, error) {
 type AesCTR struct{}
 
 func (a *AesCTR) Encrypt(key, payload []byte) ([]byte, error) {
-	if len(key) != 32 {
-		return nil, errors.New("invalid key size")
-	}
-
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}
@@ -79,10 +78,6 @@ func (a *AesCTR) Encrypt(key, payload []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	if generic.AllZero(iv) {
-		return nil, errors.New("iv is all zero")
-	}
-
 	stream := cipher.NewCTR(block, iv)
 	stream.XORKeyStream(ciphertext[aes.BlockSize:], payload)
 
@@ -90,10 +85,6 @@ func (a *AesCTR) Encrypt(key, payload []byte) ([]byte, error) {
 }
 
 func (a *AesCTR) Decrypt(key, payload []byte) ([]byte, error) {
-	if len(key) != 32 {
-		return nil, errors.New("invalid key size")
-	}
-
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}
@@ -117,10 +108,6 @@ func (a *AesCTR) Decrypt(key, payload []byte) ([]byte, error) {
 type AesCBC struct{}
 
 func (a *AesCBC) Encrypt(key, payload []byte) ([]byte, error) {
-	if len(key) != 32 {
-		return nil, errors.New("invalid key size")
-	}
-
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}
@@ -140,20 +127,12 @@ func (a *AesCBC) Encrypt(key, payload []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	if generic.AllZero(iv) {
-		return nil, errors.New("iv is all zero")
-	}
-
 	mode := cipher.NewCBCEncrypter(block, iv)
 	mode.CryptBlocks(ciphertext[aes.BlockSize:], payload)
 	return ciphertext, nil
 }
 
 func (a *AesCBC) Decrypt(key, payload []byte) ([]byte, error) {
-	if len(key) != 32 {
-		return nil, errors.New("invalid key size")
-	}
-
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
 	}

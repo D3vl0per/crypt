@@ -40,4 +40,8 @@ func TestE2EEEncryptDecryptBox(t *testing.T) {
 
 	r.Equal(t, expectedPlaintext, plaintext)
 	t.Log("Ciphertext:", ciphertext)
+
+	expectedPlaintextError, err := asymmetric.DecryptBox(sender.PK, recipient.SK, make([]byte, 32))
+	r.Nil(t, expectedPlaintextError)
+	r.ErrorContains(t, err, "decryption error")
 }
