@@ -24,6 +24,14 @@ func TestGenerateEd25519Keypair(t *testing.T) {
 	t.Log("Ed25519 Public Key Hex:", hex.EncodeToString(asym.PublicKey))
 }
 
+func BenchmarkGenerateEd25519Keypair(b *testing.B) {
+	asym := asymmetric.Ed25519{}
+	for i := 0; i < b.N; i++ {
+		err := asym.Generate()
+		r.NoError(b, err)
+	}
+}
+
 // Deterministic key generation check.
 func TestGenerateEd25519KeypairFromSeed(t *testing.T) {
 	rng, err := generic.CSPRNG(32)
@@ -232,4 +240,22 @@ func TestGenerateEd448KeypairFromSeedWithWrongSeedSize(t *testing.T) {
 
 	err = asym2.GenerateFromSeed(rng)
 	r.EqualError(t, err, "seed size must be 57 bytes long")
+}
+
+func BenchmarkEcdsa(b *testing.B) {
+	ed25519 := asymmetric.Ed25519{}
+	b.Run("Generate Ed25519", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			err := ed25519.Generate()
+			r.NoError(b, err)
+		}
+	})
+
+	ed448 := asymmetric.Ed448{}
+	b.Run("Generate Ed448", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			err := ed448.Generate()
+			r.NoError(b, err)
+		}
+	})
 }

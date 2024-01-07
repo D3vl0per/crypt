@@ -5,11 +5,11 @@ import "github.com/D3vl0per/crypt/generic"
 func ReadFileContentAndHash(algo Algorithms, path string) ([]byte, error) {
 	content, err := generic.ReadFileContent(path)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	hash, err := algo.Hash(content)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	return hash, nil
 }
@@ -17,11 +17,11 @@ func ReadFileContentAndHash(algo Algorithms, path string) ([]byte, error) {
 func ReadFileContentAndHmac(algo Algorithms, path string) ([]byte, error) {
 	content, err := generic.ReadFileContent(path)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	hash, err := algo.Hmac(content)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	return hash, nil
 }

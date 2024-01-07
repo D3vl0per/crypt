@@ -11,7 +11,7 @@ import (
 func CSPRNG(n int64) ([]byte, error) {
 	random := make([]byte, n)
 	if _, err := io.ReadFull(rand.Reader, random); err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 	return random, nil
 }

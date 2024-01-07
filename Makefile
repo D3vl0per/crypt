@@ -10,6 +10,9 @@ test-v:
 golangci-lint-install:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.0
 
+benchmark-compression:
+	go test -benchmem -bench BenchmarkRoundTrip github.com/D3vl0per/crypt/compression -timeout 30m -benchtime=1s -count=6 | tee "compression-$(shell date --iso-8601=seconds).out"
+
 coverage:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html

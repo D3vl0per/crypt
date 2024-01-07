@@ -28,10 +28,10 @@ func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
 
 	headerIndex := bytes.Index(payload, endOfHeader)
 	if headerIndex == -1 {
-		return []byte{}, errors.New("missing end flag")
+		return nil, errors.New("missing end flag")
 	}
 	if headerIndex+lengthOfKey > len(payload) {
-		return []byte{}, errors.New("invalid header length")
+		return nil, errors.New("invalid header length")
 	}
 	header := payload[:headerIndex+lengthOfKey]
 	pad := make([]byte, len(header))
@@ -49,14 +49,14 @@ func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
 func (a *AgeV1Obf) Deobfuscate(payload []byte) ([]byte, error) {
 	headerIndex := bytes.Index(payload, endFlag)
 	if headerIndex == -1 {
-		return []byte{}, errors.New("missing end flag")
+		return nil, errors.New("missing end flag")
 	}
 	if headerIndex+len(endFlag) > len(payload) {
-		return []byte{}, errors.New("invalid header")
+		return nil, errors.New("invalid header")
 	}
 	header := payload[:headerIndex+len(endFlag)]
 	if len(header) < len(endFlag) {
-		return []byte{}, errors.New("invalid header length")
+		return nil, errors.New("invalid header length")
 	}
 
 	pad := make([]byte, len(header)-len(endFlag))

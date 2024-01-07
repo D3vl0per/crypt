@@ -3,6 +3,7 @@ package symmetric
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"crypto/subtle"
 	"errors"
 	"hash"
@@ -40,18 +41,18 @@ type XChaCha20Stream struct {
 
 // XChaCha20-Poly1305
 func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
-	if len(key) != chacha20poly1305.KeySize {
-		return []byte{}, errors.New("wrong key size")
+	if generic.AllZero(key) {
+		return nil, errors.New("key is all zero")
 	}
 
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(plaintext)+aead.Overhead())
-	if _, err := generic.Rand().Read(nonce); err != nil {
-		return []byte{}, err
+	if _, err := rand.Reader.Read(nonce); err != nil {
+		return nil, err
 	}
 
 	if x.AdditionalData != nil {
@@ -63,17 +64,17 @@ func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
 }
 
 func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
-	if len(key) != chacha20poly1305.KeySize {
-		return []byte{}, errors.New("wrong secret size")
+	if generic.AllZero(key) {
+		return nil, errors.New("key is all zero")
 	}
 
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	if len(ciphertext) < chacha20poly1305.NonceSizeX {
-		return []byte{}, errors.New("ciphertext too short")
+		return nil, errors.New("ciphertext too short")
 	}
 
 	nonce, ciphertext := ciphertext[:aead.NonceSize()], ciphertext[aead.NonceSize():]
@@ -81,13 +82,13 @@ func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
 	if x.AdditionalData != nil {
 		payload, err := aead.Open(nil, nonce, ciphertext, x.AdditionalData)
 		if err != nil {
-			return []byte{}, err
+			return nil, err
 		}
 		return payload, nil
 	} else {
 		payload, err := aead.Open(nil, nonce, ciphertext, nil)
 		if err != nil {
-			return []byte{}, err
+			return nil, err
 		}
 		return payload, nil
 	}
@@ -96,18 +97,14 @@ func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
 // XOR
 func (x *Xor) Encrypt(key, payload []byte) ([]byte, error) {
 	if len(payload) != len(key) {
-		return []byte{}, errors.New("insecure xor operation, key and payload length need to be equal")
+		return nil, errors.New("insecure xor operation, key and payload length need to be equal")
 	}
 
 	xored := make([]byte, len(payload))
 	subtle.XORBytes(xored, payload, key)
 
-	if len(payload) != len(xored) || len(key) != len(xored) {
-		return []byte{}, errors.New("xored array length mismatch")
-	}
-
 	if generic.AllZero(xored) {
-		return []byte{}, errors.New("xored array has just zeroes")
+		return nil, errors.New("xored array has just zeroes")
 	}
 
 	return xored, nil
@@ -119,6 +116,10 @@ func (x *Xor) Decrypt(key, payload []byte) ([]byte, error) {
 
 // XChaCha20-Poly1305 Age Stream
 func (x *XChaCha20Stream) Encrypt(in io.Reader, out io.Writer) error {
+	if generic.AllZero(x.Key) {
+		return errors.New("key is all zero")
+	}
+
 	if len(x.Key) != chacha20poly1305.KeySize {
 		return errors.New("wrong key size")
 	}
@@ -146,6 +147,10 @@ func (x *XChaCha20Stream) Encrypt(in io.Reader, out io.Writer) error {
 }
 
 func (x *XChaCha20Stream) Decrypt(in io.Reader, out io.Writer) error {
+	if generic.AllZero(x.Key) {
+		return errors.New("key is all zero")
+	}
+	
 	if len(x.Key) != chacha20poly1305.KeySize {
 		return errors.New("wrong key size")
 	}
@@ -177,7 +182,7 @@ type stream struct {
 func (s *stream) reader(src io.Reader, key []byte) (io.Reader, error) {
 	nonce := make([]byte, chacha20poly1305.NonceSizeX)
 	if _, err := io.ReadFull(src, nonce); err != nil {
-		return nil, errors.New("failed to read nonce")
+		return nil, err
 	}
 
 	streamerKey, err := s.key(key, nonce)
@@ -190,7 +195,7 @@ func (s *stream) reader(src io.Reader, key []byte) (io.Reader, error) {
 
 func (s *stream) writer(dst io.Writer, key []byte) (io.WriteCloser, error) {
 	nonce := make([]byte, chacha20poly1305.NonceSizeX)
-	if _, err := generic.Rand().Read(nonce); err != nil {
+	if _, err := rand.Reader.Read(nonce); err != nil {
 		return nil, err
 	}
 
@@ -224,26 +229,22 @@ func (s *stream) key(fileKey, nonce []byte) ([]byte, error) {
 
 func (a *AesGCM) Encrypt(key, payload []byte) ([]byte, error) {
 	if generic.AllZero(key) {
-		return []byte{}, errors.New("key is all zero")
-	}
-
-	if len(key) != 32 {
-		return []byte{}, errors.New("wrong key size, must be 32 bytes")
+		return nil, errors.New("key is all zero")
 	}
 
 	aes, err := aes.NewCipher(key)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	gcm, err := cipher.NewGCM(aes)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	nonce := make([]byte, gcm.NonceSize(), gcm.NonceSize()+len(payload)+gcm.Overhead())
-	if _, err := generic.Rand().Read(nonce); err != nil {
-		return []byte{}, err
+	if _, err := rand.Reader.Read(nonce); err != nil {
+		return nil, err
 	}
 
 	if a.AdditionalData != nil {
@@ -255,26 +256,22 @@ func (a *AesGCM) Encrypt(key, payload []byte) ([]byte, error) {
 
 func (a *AesGCM) Decrypt(key, ciphertext []byte) ([]byte, error) {
 	if generic.AllZero(key) {
-		return []byte{}, errors.New("key is all zero")
-	}
-
-	if len(key) != 32 {
-		return []byte{}, errors.New("wrong key size, must be 32 bytes")
+		return nil, errors.New("key is all zero")
 	}
 
 	aes, err := aes.NewCipher(key)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	gcm, err := cipher.NewGCM(aes)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return []byte{}, errors.New("ciphertext too short")
+		return nil, errors.New("ciphertext too short")
 	}
 
 	nonce, rawCiphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
@@ -282,13 +279,13 @@ func (a *AesGCM) Decrypt(key, ciphertext []byte) ([]byte, error) {
 	if a.AdditionalData != nil {
 		payload, err := gcm.Open(nil, nonce, rawCiphertext, a.AdditionalData)
 		if err != nil {
-			return []byte{}, err
+			return nil, err
 		}
 		return payload, nil
 	} else {
 		payload, err := gcm.Open(nil, nonce, rawCiphertext, nil)
 		if err != nil {
-			return []byte{}, err
+			return nil, err
 		}
 		return payload, nil
 	}

@@ -20,9 +20,13 @@ This project is a comprehensive toolkit for developers who need to implement var
             - PKCS
 - Symmetric
     - XChacha20-poly1305
-    - XChacha20-poly1305 Stream (modified age code)
+    - XChacha20-poly1305 Stream (utilized age code)
     - XOR
     - AES-GCM
+    - "Insecure"
+        - SecretBox
+        - AES-CTR
+        - AES-CBC
 - Asymmetric
     - ECDSA
         - ed25519
@@ -36,9 +40,9 @@ This project is a comprehensive toolkit for developers who need to implement var
     - SHA3-256
     - SHA3-384
     - SHA3-512
-    - SHAKE-128 (planed)
-    - SHAKE-256 (planed)
-    - go_simhash (planed)
+    - SHAKE-128 (planned)
+    - SHAKE-256 (planned)
+    - go_simhash (planned)
     - Argon2id
     - Scrypt (planed)
     - HKDF (planed)
@@ -47,6 +51,10 @@ This project is a comprehensive toolkit for developers who need to implement var
     - gzip
     - zlib
     - zstd
+    - brotli
+    - huff0X1 (in progress)
+    - huff0X4 (in progress)
+
 - Aged 
     - Age encryption suite
     - Age header obfuscation v1

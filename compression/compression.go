@@ -4,10 +4,47 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zlib"
 	"github.com/klauspost/compress/zstd"
+)
+
+const (
+	// Predefined compression levels.
+	//
+	// Compatible with flate, gzip, zlib.
+	NoCompression       int = 0
+	BestSpeed           int = 1
+	BestCompression     int = 9
+	DefaultCompression  int = -1
+	ConstantCompression int = -2
+	HuffmanOnly         int = -2
+
+	// Source: https://pkg.go.dev/github.com/klauspost/compress/gzip#pkg-constants
+	//
+	// StatelessCompression will do compression but without maintaining any state
+	// between Write calls.
+	// There will be no memory kept between Write calls,
+	// but compression and speed will be suboptimal.
+	// Because of this, the size of actual Write calls will affect output size.
+	StatelessCompression int = -3
+
+	// Zstd specific predefined compression levels.
+	//
+	// Compatible with only zstd.
+	ZstdSpeedBestCompression   int = 11
+	ZstdSpeedDefault           int = 3
+	ZstdSpeedFastest           int = 1
+	ZstdSpeedBetterCompression int = 7
+
+	// Brotil specific predefined compression levels.
+	//
+	// Compatible with only brotli.
+	BrotliBestCompression    int = 11
+	BrotliDefaultCompression int = 6
+	BrotliBestSpeed          int = 0
 )
 
 type Compressor interface {
@@ -16,22 +53,26 @@ type Compressor interface {
 	CompressStream(io.Reader, io.Writer) error
 	DecompressStream(io.Reader, io.Writer) error
 	GetLevel() int
+	SetLevel(int)
+	GetName() string
 }
 
 type Gzip struct {
-	Level int
+	Level            int
+	compressedBuff   bytes.Buffer
+	deCompressedBuff bytes.Buffer
 }
 
 func (g *Gzip) Compress(in []byte) ([]byte, error) {
+	g.compressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var compressedBuff bytes.Buffer
 
-	err := g.CompressStream(reader, &compressedBuff)
+	err := g.CompressStream(reader, &g.compressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return compressedBuff.Bytes(), nil
+	return g.compressedBuff.Bytes(), nil
 }
 
 func (g *Gzip) CompressStream(in io.Reader, out io.Writer) error {
@@ -43,22 +84,22 @@ func (g *Gzip) CompressStream(in io.Reader, out io.Writer) error {
 
 	_, err = io.Copy(enc, in)
 	if err != nil {
-		_ = enc.Close()
+		enc.Close()
 		return err
 	}
 	return enc.Close()
 }
 
 func (g *Gzip) Decompress(in []byte) ([]byte, error) {
+	g.deCompressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var deCompressedBuff bytes.Buffer
 
-	err := g.DecompressStream(reader, &deCompressedBuff)
+	err := g.DecompressStream(reader, &g.deCompressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return deCompressedBuff.Bytes(), nil
+	return g.deCompressedBuff.Bytes(), nil
 }
 
 func (g *Gzip) DecompressStream(in io.Reader, out io.Writer) error {
@@ -76,20 +117,30 @@ func (g *Gzip) GetLevel() int {
 	return g.Level
 }
 
+func (g *Gzip) SetLevel(level int) {
+	g.Level = level
+}
+
+func (g *Gzip) GetName() string {
+	return "gzip"
+}
+
 type Zstd struct {
-	Level int
+	Level            int
+	compressedBuff   bytes.Buffer
+	deCompressedBuff bytes.Buffer
 }
 
 func (z *Zstd) Compress(in []byte) ([]byte, error) {
+	z.compressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var compressedBuff bytes.Buffer
 
-	err := z.CompressStream(reader, &compressedBuff)
+	err := z.CompressStream(reader, &z.compressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return compressedBuff.Bytes(), nil
+	return z.compressedBuff.Bytes(), nil
 }
 
 func (z *Zstd) CompressStream(in io.Reader, out io.Writer) error {
@@ -100,22 +151,22 @@ func (z *Zstd) CompressStream(in io.Reader, out io.Writer) error {
 	}
 	_, err = io.Copy(enc, in)
 	if err != nil {
-		_ = enc.Close()
+		enc.Close()
 		return err
 	}
 	return enc.Close()
 }
 
 func (z *Zstd) Decompress(in []byte) ([]byte, error) {
+	z.deCompressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var deCompressedBuff bytes.Buffer
 
-	err := z.DecompressStream(reader, &deCompressedBuff)
+	err := z.DecompressStream(reader, &z.deCompressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return deCompressedBuff.Bytes(), nil
+	return z.deCompressedBuff.Bytes(), nil
 }
 
 func (z *Zstd) DecompressStream(in io.Reader, out io.Writer) error {
@@ -133,20 +184,30 @@ func (z *Zstd) GetLevel() int {
 	return z.Level
 }
 
+func (z *Zstd) SetLevel(level int) {
+	z.Level = level
+}
+
+func (z *Zstd) GetName() string {
+	return "zstd"
+}
+
 type Flate struct {
-	Level int
+	Level            int
+	compressedBuff   bytes.Buffer
+	deCompressedBuff bytes.Buffer
 }
 
 func (f *Flate) Compress(in []byte) ([]byte, error) {
+	f.compressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var compressedBuff bytes.Buffer
 
-	err := f.CompressStream(reader, &compressedBuff)
+	err := f.CompressStream(reader, &f.compressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return compressedBuff.Bytes(), nil
+	return f.compressedBuff.Bytes(), nil
 }
 
 func (f *Flate) CompressStream(in io.Reader, out io.Writer) error {
@@ -157,22 +218,22 @@ func (f *Flate) CompressStream(in io.Reader, out io.Writer) error {
 	}
 	_, err = io.Copy(enc, in)
 	if err != nil {
-		_ = enc.Close()
+		enc.Close()
 		return err
 	}
 	return enc.Close()
 }
 
 func (f *Flate) Decompress(in []byte) ([]byte, error) {
+	f.deCompressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var deCompressedBuff bytes.Buffer
 
-	err := f.DecompressStream(reader, &deCompressedBuff)
+	err := f.DecompressStream(reader, &f.deCompressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return deCompressedBuff.Bytes(), nil
+	return f.deCompressedBuff.Bytes(), nil
 }
 
 func (f *Flate) DecompressStream(in io.Reader, out io.Writer) error {
@@ -186,20 +247,30 @@ func (f *Flate) GetLevel() int {
 	return f.Level
 }
 
+func (f *Flate) SetLevel(level int) {
+	f.Level = level
+}
+
+func (f *Flate) GetName() string {
+	return "deflate"
+}
+
 type Zlib struct {
-	Level int
+	Level            int
+	compressedBuff   bytes.Buffer
+	deCompressedBuff bytes.Buffer
 }
 
 func (zl *Zlib) Compress(in []byte) ([]byte, error) {
+	zl.compressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var compressedBuff bytes.Buffer
 
-	err := zl.CompressStream(reader, &compressedBuff)
+	err := zl.CompressStream(reader, &zl.compressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return compressedBuff.Bytes(), nil
+	return zl.compressedBuff.Bytes(), nil
 }
 
 func (zl *Zlib) CompressStream(in io.Reader, out io.Writer) error {
@@ -210,22 +281,22 @@ func (zl *Zlib) CompressStream(in io.Reader, out io.Writer) error {
 	}
 	_, err = io.Copy(enc, in)
 	if err != nil {
-		_ = enc.Close()
+		enc.Close()
 		return err
 	}
 	return enc.Close()
 }
 
 func (zl *Zlib) Decompress(in []byte) ([]byte, error) {
+	zl.deCompressedBuff.Reset()
 	reader := bytes.NewReader(in)
-	var deCompressedBuff bytes.Buffer
 
-	err := zl.DecompressStream(reader, &deCompressedBuff)
+	err := zl.DecompressStream(reader, &zl.deCompressedBuff)
 	if err != nil {
-		return []byte{}, nil
+		return nil, nil
 	}
 
-	return deCompressedBuff.Bytes(), nil
+	return zl.deCompressedBuff.Bytes(), nil
 }
 
 func (zl *Zlib) DecompressStream(in io.Reader, out io.Writer) error {
@@ -241,4 +312,79 @@ func (zl *Zlib) DecompressStream(in io.Reader, out io.Writer) error {
 
 func (zl *Zlib) GetLevel() int {
 	return zl.Level
+}
+
+func (zl *Zlib) SetLevel(level int) {
+	zl.Level = level
+}
+
+func (zl *Zlib) GetName() string {
+	return "zlib"
+}
+
+type Brotli struct {
+	Level int
+	bw    *brotli.Writer
+	br    *brotli.Reader
+}
+
+func (b *Brotli) Compress(in []byte) ([]byte, error) {
+	reader := bytes.NewReader(in)
+	var compressedBuff bytes.Buffer
+
+	err := b.CompressStream(reader, &compressedBuff)
+	if err != nil {
+		return nil, nil
+	}
+
+	return compressedBuff.Bytes(), nil
+}
+func (b *Brotli) CompressStream(in io.Reader, out io.Writer) error {
+
+	b.bw.Reset(out)
+	_, err := io.Copy(b.bw, in)
+	if err != nil {
+		return err
+	}
+
+	if err := b.bw.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (b *Brotli) Decompress(in []byte) ([]byte, error) {
+	reader := bytes.NewReader(in)
+	var deCompressedBuff bytes.Buffer
+
+	err := b.DecompressStream(reader, &deCompressedBuff)
+	if err != nil {
+		return nil, nil
+	}
+
+	return deCompressedBuff.Bytes(), nil
+}
+func (b *Brotli) DecompressStream(in io.Reader, out io.Writer) error {
+
+	if err := b.br.Reset(in); err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(out, b.br); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *Brotli) GetLevel() int {
+	return b.Level
+}
+
+func (b *Brotli) SetLevel(level int) {
+	b.bw = brotli.NewWriterLevel(nil, b.Level)
+	b.br = brotli.NewReader(nil)
+}
+
+func (b *Brotli) GetName() string {
+	return "br"
 }
