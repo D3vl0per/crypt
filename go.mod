@@ -8,7 +8,7 @@ require (
 	github.com/cloudflare/circl v1.3.7
 	github.com/klauspost/compress v1.17.4
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/crypto v0.17.0
+	golang.org/x/crypto v0.18.0
 )
 
 require (
