@@ -4,7 +4,7 @@ go 1.21.3
 
 require (
 	filippo.io/age v1.1.1
-	github.com/andybalholm/brotli v1.0.6
+	github.com/andybalholm/brotli v1.1.0
 	github.com/cloudflare/circl v1.3.7
 	github.com/klauspost/compress v1.17.4
 	github.com/stretchr/testify v1.8.4
