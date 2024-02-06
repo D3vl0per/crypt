@@ -194,102 +194,102 @@ func testRoundTrip(t *testing.T, compressor compression.Compressor, data []byte)
 
 func TestRoundTripsFault(t *testing.T) {
 	type cases struct {
-		name string
-		level int
-		data []byte
+		name        string
+		level       int
+		data        []byte
 		expectedErr string
 	}
 
 	type testStructue struct {
-		name   string
+		name       string
 		compressor compression.Compressor
-		compress []cases
+		compress   []cases
 		decompress []cases
 	}
 
 	testCases := []testStructue{
 		{
-			name: "gzip",
+			name:       "gzip",
 			compressor: &compression.Gzip{},
 			compress: []cases{
 				{
-					name: "level 10, invalid level",
-					level: 10,
-					data: []byte("test"),
+					name:        "level 10, invalid level",
+					level:       10,
+					data:        []byte("test"),
 					expectedErr: "gzip: invalid compression level: 10",
 				},
 				{
-					name: "level -4, invalid level",
-					level: -4,
-					data: []byte("test"),
+					name:        "level -4, invalid level",
+					level:       -4,
+					data:        []byte("test"),
 					expectedErr: "gzip: invalid compression level: -4",
 				},
 			},
 		},
 		{
-			name: "zsdt",
+			name:       "zsdt",
 			compressor: &compression.Zstd{},
 			decompress: []cases{
 				{
-					name: "invalid payload, invalid header",
-					data: make([]byte, 32),
-					level: 1,
+					name:        "invalid payload, invalid header",
+					data:        make([]byte, 32),
+					level:       1,
 					expectedErr: "invalid input: magic number mismatch",
 				},
 			},
 		},
 		{
-			name: "flate",
+			name:       "flate",
 			compressor: &compression.Flate{},
 			compress: []cases{
 				{
-					name: "level 10, invalid level",
-					level: 10,
-					data: []byte("test"),
+					name:        "level 10, invalid level",
+					level:       10,
+					data:        []byte("test"),
 					expectedErr: "flate: invalid compression level 10: want value in range [-2, 9]",
 				},
 				{
-					name: "level -3, invalid level",
-					level: -3,
-					data: []byte("test"),
+					name:        "level -3, invalid level",
+					level:       -3,
+					data:        []byte("test"),
 					expectedErr: "flate: invalid compression level -3: want value in range [-2, 9]",
 				},
 			},
 			decompress: []cases{
 				{
-					name: "invalid payload, invalid header",
-					data: make([]byte, 32),
-					level: 1,
+					name:        "invalid payload, invalid header",
+					data:        make([]byte, 32),
+					level:       1,
 					expectedErr: "invalid header",
 				},
 			},
 		},
 		{
-			name:  "zlib",
+			name:       "zlib",
 			compressor: &compression.Zlib{},
 			compress: []cases{
 				{
-					name: "level 10, invalid level",
-					level: 10,
-					data: []byte("test"),
+					name:        "level 10, invalid level",
+					level:       10,
+					data:        []byte("test"),
 					expectedErr: "invalid compression level",
 				},
 				{
-					name: "level -3, invalid level",
-					level: -3,
-					data: []byte("test"),
+					name:        "level -3, invalid level",
+					level:       -3,
+					data:        []byte("test"),
 					expectedErr: "invalid compression level",
 				},
 			},
 		},
 		{
-			name: "brotli",
+			name:       "brotli",
 			compressor: &compression.Brotli{},
 			decompress: []cases{
 				{
-					name: "invalid payload, invalid header",
-					data: make([]byte, 32),
-					level: 1,
+					name:        "invalid payload, invalid header",
+					data:        make([]byte, 32),
+					level:       1,
 					expectedErr: "invalid header",
 				},
 			},
