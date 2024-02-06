@@ -192,6 +192,67 @@ func TestArgon2IDWrongParameters(t *testing.T) {
 
 }
 
+func TestWrongValidate(t *testing.T) {
+	a := hasher.Argon2ID{}
+	_, err := a.Validate([]byte("data"), "invalid argonString")
+	r.Error(t, err)
+}
+
+func TestWrongHash(t *testing.T) {
+	a := hasher.Argon2ID{
+		Salt: make([]byte, 15),
+	}
+	_, err := a.Hash([]byte("data"))
+	r.Error(t, err)
+	r.ErrorContains(t, err, "salt must be 16 byte long")
+}
+
+func TestWrongExtractParameters(t *testing.T) {
+	a := &hasher.Argon2ID{}
+
+	t.Run("invalid input format", func(t *testing.T) {
+		_, err := a.ExtractParameters("invalid input")
+		r.Error(t, err)
+		r.Equal(t, "invalid input format", err.Error())
+	})
+
+	t.Run("hash base64 decode error", func(t *testing.T) {
+		_, err := a.ExtractParameters("$argon2id$v=19$m=65536,t=2,p=1$ZU93MDU4TGZ3SGt2Z1NLZA$#####")
+		r.Error(t, err)
+		r.ErrorContains(t, err, "hash base64 decode error")
+	})
+
+	t.Run("salt must be 16 byte long", func(t *testing.T) {
+		_, err := a.ExtractParameters("$argon2id$v=19$m=65536,t=2,p=1$invalid$Nc7/+V0dGlljrWU8on8w6w")
+		r.Error(t, err)
+		r.ErrorContains(t, err, "salt must be 16 byte long")
+	})
+
+	t.Run("salt base64 decode error:", func(t *testing.T) {
+		_, err := a.ExtractParameters("$argon2id$v=19$m=65536,t=2,p=1$shortsalt$Nc7/+V0dGlljrWU8on8w6w")
+		r.Error(t, err)
+		r.ErrorContains(t, err, "salt base64 decode error: illegal base64 data at input byte")
+	})
+
+	t.Run("iteration parameter parsing error, invalid input format", func(t *testing.T) {
+		_, err := a.ExtractParameters("$argon2id$v=19$m=65536,t=invalid,p=1$ZU93MDU4TGZ3SGt2Z1NLZA$Nc7/+V0dGlljrWU8on8w6w")
+		r.Error(t, err)
+		r.ErrorContains(t, err, "invalid input format")
+	})
+
+	t.Run("parallelism parameter parsing error, invalid input format", func(t *testing.T) {
+		_, err := a.ExtractParameters("$argon2id$v=19$m=65536,t=2,p=invalid$ZU93MDU4TGZ3SGt2Z1NLZA$Nc7/+V0dGlljrWU8on8w6w")
+		r.Error(t, err)
+		r.ErrorContains(t, err, "invalid input format")
+	})
+
+	t.Run("memory parameter parsing error, invalid input format", func(t *testing.T) {
+		_, err := a.ExtractParameters("$argon2id$v=19$m=invalid,t=2,p=1$ZU93MDU4TGZ3SGt2Z1NLZA$Nc7/+V0dGlljrWU8on8w6w")
+		r.Error(t, err)
+		r.ErrorContains(t, err, "invalid input format")
+	})
+}
+
 /*
 func TestHKDF(t *testing.T) {
 	secret := []byte("Correct Horse Battery Staple")

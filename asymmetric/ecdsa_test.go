@@ -48,7 +48,9 @@ func TestGenerateEd25519KeypairFromSeed(t *testing.T) {
 	r.NoError(t, err)
 
 	r.Equal(t, asym2.SecretKey, asym.SecretKey)
+	r.Equal(t, asym2.GetSecretKey(), asym.GetSecretKey())
 	r.Equal(t, asym2.PublicKey, asym.PublicKey)
+	r.Equal(t, asym2.GetPublicKey(), asym.GetPublicKey())
 }
 
 func TestE2EEEd25519SignVerify(t *testing.T) {
@@ -117,8 +119,21 @@ func TestE2EEEd25519SignVerify(t *testing.T) {
 			isValid, err := tt.asym.Verify(msg, signature)
 			r.NoError(t, err)
 			r.True(t, isValid)
+			r.Equal(t, tt.asym.Encoder, tt.asym.GetEncoder())
 		})
 	}
+}
+
+func TestWrongEd25519KGenerationFromSeeed(t *testing.T) {
+	asym := asymmetric.Ed25519{}
+	err := asym.GenerateFromSeed([]byte("wrong seed"))
+	r.EqualError(t, err, "seed size must be 32 bytes long")
+}
+
+func TestWrongEd25519ToPublicKey(t *testing.T) {
+	invalidKey := "not a public key"
+	_, err := asymmetric.Ed25519ToPublicKey(invalidKey)
+	r.ErrorContains(t, err, "public key type")
 }
 
 func TestGenerateEd448Keypair(t *testing.T) {
@@ -201,6 +216,7 @@ func TestE2EEEd448SignVerify(t *testing.T) {
 			isValid, err := tt.asym.Verify(msg, signature)
 			r.NoError(t, err)
 			r.True(t, isValid)
+			r.Equal(t, tt.asym.Encoder, tt.asym.GetEncoder())
 		})
 	}
 }
@@ -221,7 +237,9 @@ func TestGenerateEd448KeypairFromSeed(t *testing.T) {
 	r.NoError(t, err)
 
 	r.Equal(t, asym2.SecretKey, asym.SecretKey)
+	r.Equal(t, asym2.GetSecretKey(), asym.GetSecretKey())
 	r.Equal(t, asym2.PublicKey, asym.PublicKey)
+	r.Equal(t, asym2.GetPublicKey(), asym.GetPublicKey())
 }
 
 func TestGenerateEd448KeypairFromSeedWithWrongSeedSize(t *testing.T) {
@@ -258,4 +276,16 @@ func BenchmarkEcdsa(b *testing.B) {
 			r.NoError(b, err)
 		}
 	})
+}
+
+func TestWrongEd448KGenerationFromSeeed(t *testing.T) {
+	asym := asymmetric.Ed448{}
+	err := asym.GenerateFromSeed([]byte("wrong seed"))
+	r.EqualError(t, err, "seed size must be 57 bytes long")
+}
+
+func TestWrongEd448ToPublicKey(t *testing.T) {
+	invalidKey := "not a public key"
+	_, err := asymmetric.Ed448ToPublicKey(invalidKey)
+	r.ErrorContains(t, err, "public key type")
 }

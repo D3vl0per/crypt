@@ -244,15 +244,15 @@ func TestE2EEFault(t *testing.T) {
 					expectedErr: "invalid key size",
 				},
 				{
-					name: 	  "wrong ciphertext size",
-					key: 	  generateKey(t, 32),
-					payload:  generateKey(t, 11),
+					name:        "wrong ciphertext size",
+					key:         generateKey(t, 32),
+					payload:     generateKey(t, 11),
 					expectedErr: "ciphertext too short",
 				},
 				{
-					name: 	  "non-decryptable payload",
-					key: 	  generateKey(t, 32),
-					payload:  generateKey(t, 32),
+					name:        "non-decryptable payload",
+					key:         generateKey(t, 32),
+					payload:     generateKey(t, 32),
 					expectedErr: "cipher: message authentication failed",
 				},
 			},
@@ -264,9 +264,9 @@ func TestE2EEFault(t *testing.T) {
 			},
 			decrypt: []cases{
 				{
-					name: 	  "non-decryptable payload",
-					key: 	  generateKey(t, 32),
-					payload:  generateKey(t, 32),
+					name:        "non-decryptable payload",
+					key:         generateKey(t, 32),
+					payload:     generateKey(t, 32),
 					expectedErr: "cipher: message authentication failed",
 				},
 			},
@@ -374,7 +374,7 @@ func TestE2EEFault(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name + "/encryption", func(t *testing.T) {
+		t.Run(tc.name+"/encryption", func(t *testing.T) {
 			for _, c := range tc.encrypt {
 				t.Run(c.name, func(t *testing.T) {
 					ciphertext, err := tc.sym.Encrypt(c.key, c.payload)
@@ -383,7 +383,7 @@ func TestE2EEFault(t *testing.T) {
 				})
 			}
 		})
-		t.Run(tc.name + "/decryption", func(t *testing.T) {
+		t.Run(tc.name+"/decryption", func(t *testing.T) {
 			for _, c := range tc.decrypt {
 				t.Run(c.name, func(t *testing.T) {
 					plaintext, err := tc.sym.Decrypt(c.key, c.payload)
@@ -395,7 +395,7 @@ func TestE2EEFault(t *testing.T) {
 	}
 
 	for _, tc := range testCasesStream {
-		t.Run(tc.name + "/encryption", func(t *testing.T) {
+		t.Run(tc.name+"/encryption", func(t *testing.T) {
 			for _, c := range tc.encrypt {
 				t.Run(c.name, func(t *testing.T) {
 					out := &bytes.Buffer{}
@@ -406,7 +406,7 @@ func TestE2EEFault(t *testing.T) {
 				})
 			}
 		})
-		t.Run(tc.name + "/decryption", func(t *testing.T) {
+		t.Run(tc.name+"/decryption", func(t *testing.T) {
 			for _, c := range tc.decrypt {
 				t.Run(c.name, func(t *testing.T) {
 					out := &bytes.Buffer{}

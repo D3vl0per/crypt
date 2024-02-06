@@ -71,3 +71,20 @@ func TestOriginalCurve25519(t *testing.T) {
 
 	r.Equal(t, aliceSharedKey, bobSharedKey)
 }
+
+func TestWrongKeys(t *testing.T) {
+	alice := asymmetric.Curve25519{}
+	err := alice.GenerateKeypair()
+	r.NoError(t, err)
+
+	sharedKey, err := alice.GenerateSharedSecret([]byte("wrong public key"))
+	r.Nil(t, sharedKey)
+	r.ErrorContains(t, err, "invalid public key")
+
+	charlie := asymmetric.Curve25519{
+		SecretKey: []byte("wrong secret key"),
+	}
+	sharedKey, err = charlie.GenerateSharedSecret(alice.PublicKey)
+	r.Nil(t, sharedKey)
+	r.ErrorContains(t, err, "invalid private key size")
+}

@@ -150,7 +150,7 @@ func (x *XChaCha20Stream) Decrypt(in io.Reader, out io.Writer) error {
 	if generic.AllZero(x.Key) {
 		return errors.New("key is all zero")
 	}
-	
+
 	if len(x.Key) != chacha20poly1305.KeySize {
 		return errors.New("wrong key size")
 	}

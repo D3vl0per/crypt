@@ -369,9 +369,9 @@ func (zl *Zlib) GetModes() []int {
 }
 
 type Brotli struct {
-	Level int
-	bw    *brotli.Writer
-	br    *brotli.Reader
+	Level            int
+	bw               *brotli.Writer
+	br               *brotli.Reader
 	compressedBuff   bytes.Buffer
 	deCompressedBuff bytes.Buffer
 }
