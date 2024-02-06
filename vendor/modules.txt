@@ -4,9 +4,10 @@ filippo.io/age
 filippo.io/age/internal/bech32
 filippo.io/age/internal/format
 filippo.io/age/internal/stream
-# github.com/andybalholm/brotli v1.0.6
-## explicit; go 1.12
+# github.com/andybalholm/brotli v1.1.0
+## explicit; go 1.13
 github.com/andybalholm/brotli
+github.com/andybalholm/brotli/matchfinder
 # github.com/cloudflare/circl v1.3.7
 ## explicit; go 1.19
 github.com/cloudflare/circl/ecc/goldilocks
@@ -20,7 +21,7 @@ github.com/cloudflare/circl/sign/ed448
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/klauspost/compress v1.17.4
+# github.com/klauspost/compress v1.17.6
 ## explicit; go 1.19
 github.com/klauspost/compress
 github.com/klauspost/compress/flate
@@ -39,7 +40,7 @@ github.com/pmezard/go-difflib/difflib
 ## explicit; go 1.20
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# golang.org/x/crypto v0.17.0
+# golang.org/x/crypto v0.18.0
 ## explicit; go 1.18
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
