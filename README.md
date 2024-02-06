@@ -4,9 +4,8 @@
 <a href="https://github.com/D3vl0per/crypt/actions/workflows/test_test.yaml"><img src="https://github.com/D3vl0per/crypt/actions/workflows/test_test.yaml/badge.svg?branch=main"/></a>
 <a href="https://codecov.io/github/D3vl0per/crypt"><img src="https://codecov.io/github/D3vl0per/crypt/graph/badge.svg?token=X8DSE9DZ18"/></a>
 </p>
-
-This project is a comprehensive toolkit for developers who need to implement various cryptographic operations in their Go applications
-
+<p align="center"> This project is a comprehensive toolkit for developers who need to implement various cryptographic operations in their Go applications
+</p>
 
 ## Crypto suite:
 - Generic
