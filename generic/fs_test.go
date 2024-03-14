@@ -36,6 +36,7 @@ func TestDelete(t *testing.T) {
 		t.Errorf("expected file to be deleted, got error: %v", err)
 	}
 }
+
 func TestOverwrite(t *testing.T) {
 	// Create a temporary file for testing
 	tempFile, err := os.CreateTemp("", "testfile")

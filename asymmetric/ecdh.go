@@ -5,6 +5,10 @@ import (
 	"golang.org/x/crypto/curve25519"
 )
 
+const (
+	Ed25519PrivateKeySize = 32
+)
+
 type DH interface {
 	GenerateKeypair() error
 	GenerateSharedSecret([]byte) ([]byte, error)
@@ -16,7 +20,7 @@ type Curve25519 struct {
 }
 
 func (c *Curve25519) GenerateKeypair() error {
-	secretKey, err := generic.CSPRNG(32)
+	secretKey, err := generic.CSPRNG(Ed25519PrivateKeySize)
 	if err != nil {
 		return err
 	}

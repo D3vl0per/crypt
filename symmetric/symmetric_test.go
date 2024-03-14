@@ -3,7 +3,6 @@ package symmetric_test
 import (
 	"bytes"
 	"crypto/sha256"
-
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
@@ -139,7 +138,6 @@ func TestE2EE(t *testing.T) {
 			r.Equal(t, out2.Bytes(), tc.payload)
 		})
 	}
-
 }
 
 func TestE2EEFault(t *testing.T) {
@@ -418,7 +416,6 @@ func TestE2EEFault(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func generateKey(t *testing.T, size int) []byte {

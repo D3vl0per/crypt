@@ -21,6 +21,7 @@ type Symmetric interface {
 	Decrypt([]byte, []byte) ([]byte, error)
 }
 
+//nolint:golint
 type SymmetricStream interface {
 	Encrypt(io.Reader, io.Writer) error
 	Decrypt(io.Reader, io.Writer) error
@@ -29,17 +30,19 @@ type SymmetricStream interface {
 type XChaCha20 struct {
 	AdditionalData []byte
 }
-type Xor struct{}
-type AesGCM struct {
-	AdditionalData []byte
-}
+type (
+	Xor    struct{}
+	AesGCM struct {
+		AdditionalData []byte
+	}
+)
 
 type XChaCha20Stream struct {
 	Key  []byte
 	Hash func() hash.Hash
 }
 
-// XChaCha20-Poly1305
+// XChaCha20-Poly1305.
 func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
 	if generic.AllZero(key) {
 		return nil, errors.New("key is all zero")
@@ -57,10 +60,8 @@ func (x *XChaCha20) Encrypt(key, plaintext []byte) ([]byte, error) {
 
 	if x.AdditionalData != nil {
 		return aead.Seal(nonce, nonce, plaintext, x.AdditionalData), nil
-	} else {
-		return aead.Seal(nonce, nonce, plaintext, nil), nil
 	}
-
+	return aead.Seal(nonce, nonce, plaintext, nil), nil
 }
 
 func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
@@ -85,16 +86,15 @@ func (x *XChaCha20) Decrypt(key, ciphertext []byte) ([]byte, error) {
 			return nil, err
 		}
 		return payload, nil
-	} else {
-		payload, err := aead.Open(nil, nonce, ciphertext, nil)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	}
+	payload, err := aead.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return nil, err
+	}
+	return payload, nil
 }
 
-// XOR
+// XOR.
 func (x *Xor) Encrypt(key, payload []byte) ([]byte, error) {
 	if len(payload) != len(key) {
 		return nil, errors.New("insecure xor operation, key and payload length need to be equal")
@@ -114,7 +114,7 @@ func (x *Xor) Decrypt(key, payload []byte) ([]byte, error) {
 	return x.Encrypt(key, payload)
 }
 
-// XChaCha20-Poly1305 Age Stream
+// XChaCha20-Poly1305 Age Stream.
 func (x *XChaCha20Stream) Encrypt(in io.Reader, out io.Writer) error {
 	if generic.AllZero(x.Key) {
 		return errors.New("key is all zero")
@@ -249,9 +249,8 @@ func (a *AesGCM) Encrypt(key, payload []byte) ([]byte, error) {
 
 	if a.AdditionalData != nil {
 		return gcm.Seal(nonce, nonce, payload, a.AdditionalData), nil
-	} else {
-		return gcm.Seal(nonce, nonce, payload, nil), nil
 	}
+	return gcm.Seal(nonce, nonce, payload, nil), nil
 }
 
 func (a *AesGCM) Decrypt(key, ciphertext []byte) ([]byte, error) {
@@ -282,11 +281,10 @@ func (a *AesGCM) Decrypt(key, ciphertext []byte) ([]byte, error) {
 			return nil, err
 		}
 		return payload, nil
-	} else {
-		payload, err := gcm.Open(nil, nonce, rawCiphertext, nil)
-		if err != nil {
-			return nil, err
-		}
-		return payload, nil
 	}
+	payload, err := gcm.Open(nil, nonce, rawCiphertext, nil)
+	if err != nil {
+		return nil, err
+	}
+	return payload, nil
 }

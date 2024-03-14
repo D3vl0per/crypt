@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 )
 
-// Secure way to delete file
+// Secure way to delete file.
 func Delete(targetPath string, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}
-	// #do-not-check-gosec
+	//nolint:gomnd
 	file, err := os.OpenFile(targetPath, os.O_RDWR, 0o666)
 	if err != nil {
 		return err
@@ -56,13 +56,13 @@ func Delete(targetPath string, cycle int) error {
 	return nil
 }
 
-// Secure way to overwrite file
+// Secure way to overwrite file.
 func Overwrite(targetPath string, data []byte, cycle int) error {
 	if cycle == 0 {
 		cycle = 3
 	}
 
-	// #do-not-check-gosec
+	//nolint:gomnd
 	file, err := os.OpenFile(targetPath, os.O_RDWR, 0o666)
 	if err != nil {
 		return err

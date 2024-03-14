@@ -8,7 +8,6 @@ import (
 	"github.com/D3vl0per/crypt/asymmetric"
 	"github.com/D3vl0per/crypt/compression"
 	"github.com/D3vl0per/crypt/generic"
-
 	r "github.com/stretchr/testify/require"
 )
 
@@ -59,7 +58,6 @@ type compressionSample struct {
 }
 
 func compressionSamples() []compressionSample {
-
 	ed25519 := asymmetric.Ed25519{}
 	if err := ed25519.Generate(); err != nil {
 		panic(err)
@@ -87,7 +85,7 @@ func compressionSamples() []compressionSample {
 			data: ed25519.SecretKey,
 		},
 		{
-			name: "ed15519-public-key",
+			name: "ed25519-public-key",
 			data: ed25519.PublicKey,
 		},
 	}
@@ -113,7 +111,6 @@ func BenchmarkRoundTrip(b *testing.B) {
 }
 
 func benchmarkRoundTrip(b *testing.B, compressor compression.Compressor, data []byte) {
-
 	compressed, err := compressor.Compress(data)
 	r.NoError(b, err)
 
@@ -157,7 +154,6 @@ func TestRoundTrips(t *testing.T) {
 }
 
 func testRoundTrip(t *testing.T, compressor compression.Compressor, data []byte) {
-
 	compressed, err := compressor.Compress(data)
 	r.NoError(t, err)
 
@@ -317,7 +313,6 @@ func TestRoundTripsFault(t *testing.T) {
 }
 
 func TestZstdWrongDecompressData(t *testing.T) {
-
 	data, err := generic.CSPRNG(16)
 	r.NoError(t, err)
 

@@ -18,7 +18,7 @@ type ImportExport interface {
 // 1. ImportData (string) -> PublicKey (ed25519.PublicKey)
 // Two ways to export:
 // 1. PublicKey (ed25519.PublicKey) -> ExportData (string)
-// 2. ExportPublicKey (crypto.PublicKey) -> ExportData (string)
+// 2. ExportPublicKey (crypto.PublicKey) -> ExportData (string).
 type PKIX struct {
 	PublicKey       ed25519.PublicKey
 	ImportData      string
@@ -34,9 +34,8 @@ type PKCS struct {
 	Encoder    Encoder
 }
 
-// struct PKIX ImportData (string) -> struct PKIX PublicKey (ed25519.PublicKey)
+// struct PKIX ImportData (string) -> struct PKIX PublicKey (ed25519.PublicKey).
 func (e *PKIX) Import() error {
-
 	if e.ImportData == "" {
 		return errors.New("import data is empty")
 	}
@@ -61,18 +60,24 @@ func (e *PKIX) Import() error {
 	if err != nil {
 		return err
 	}
-	// nolint:errcheck
-	pkC := pkRaw.(crypto.PublicKey)
-	// nolint:errcheck
-	e.PublicKey = pkC.(ed25519.PublicKey)
+
+	pkC, ok := pkRaw.(crypto.PublicKey)
+	if !ok {
+		return errors.New("invalid crypto public key type")
+	}
+
+	pk, ok := pkC.(ed25519.PublicKey)
+	if !ok {
+		return errors.New("invalid ed25519 public key type")
+	}
+	e.PublicKey = pk
 	return nil
 }
 
 // Two ways to export:
 // 1. struct PKIX PublicKey (ed25519.PublicKey) -> struct PKIX ExportData (string)
-// 2. struct PKIX ExportPublicKey (crypto.PublicKey) -> struct PKIX ExportData (string)
+// 2. struct PKIX ExportPublicKey (crypto.PublicKey) -> struct PKIX ExportData (string).
 func (e *PKIX) Export() error {
-
 	if e.ExportPublicKey == nil && e.PublicKey == nil {
 		return errors.New("missing public key")
 	}
@@ -102,16 +107,15 @@ func (e *PKIX) Export() error {
 
 	if e.Encoder == nil {
 		e.ExportData = string(pem.EncodeToMemory(block))
-	} else {
-		e.ExportData = e.Encoder.Encode(pem.EncodeToMemory(block))
+		return nil
 	}
+	e.ExportData = e.Encoder.Encode(pem.EncodeToMemory(block))
 
 	return nil
 }
 
-// struct PKCS ImportData (string) -> struct PKCS SecretKey (ed25519.PrivateKey)
+// struct PKCS ImportData (string) -> struct PKCS SecretKey (ed25519.PrivateKey).
 func (e *PKCS) Import() error {
-
 	if e.ImportData == "" {
 		return errors.New("import data is empty")
 	}
@@ -136,16 +140,22 @@ func (e *PKCS) Import() error {
 	if err != nil {
 		return err
 	}
-	// nolint:errcheck
-	pkC := pkRaw.(crypto.PrivateKey)
-	// nolint:errcheck
-	e.SecretKey = pkC.(ed25519.PrivateKey)
+
+	pkC, ok := pkRaw.(crypto.PrivateKey)
+	if !ok {
+		return errors.New("invalid crypto private key type")
+	}
+
+	pk, ok := pkC.(ed25519.PrivateKey)
+	if !ok {
+		return errors.New("invalid ed25519 private key type")
+	}
+	e.SecretKey = pk
 	return nil
 }
 
-// struct PKCS SecretKey (ed25519.PrivateKey) -> struct PKCS ExportData (string)
+// struct PKCS SecretKey (ed25519.PrivateKey) -> struct PKCS ExportData (string).
 func (e *PKCS) Export() error {
-
 	if e.SecretKey == nil {
 		return errors.New("missing secret key")
 	}

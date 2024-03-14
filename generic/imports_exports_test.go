@@ -64,28 +64,28 @@ func TestPKIX(t *testing.T) {
 			name: "UrlBase64 encoded keys",
 			pkix: generic.PKIX{
 				ExportPublicKey: asym.SecretKey.Public(),
-				Encoder:         &generic.UrlBase64{},
+				Encoder:         &generic.URLBase64{},
 			},
 		},
 		{
 			name: "UrlBase64 encoded keys with ed25519.PublicKey",
 			pkix: generic.PKIX{
 				ExportPublicKey: asym.PublicKey,
-				Encoder:         &generic.UrlBase64{},
+				Encoder:         &generic.URLBase64{},
 			},
 		},
 		{
 			name: "RawUrlBase64 encoded keys",
 			pkix: generic.PKIX{
 				ExportPublicKey: asym.SecretKey.Public(),
-				Encoder:         &generic.RawUrlBase64{},
+				Encoder:         &generic.RawURLBase64{},
 			},
 		},
 		{
 			name: "RawUrlBase64 encoded keys with ed25519.PublicKey",
 			pkix: generic.PKIX{
 				ExportPublicKey: asym.PublicKey,
-				Encoder:         &generic.RawUrlBase64{},
+				Encoder:         &generic.RawURLBase64{},
 			},
 		},
 		{
@@ -242,14 +242,14 @@ func TestPKCS(t *testing.T) {
 			name: "UrlBase64 encoded keys",
 			pkcs: generic.PKCS{
 				SecretKey: asym.SecretKey,
-				Encoder:   &generic.UrlBase64{},
+				Encoder:   &generic.URLBase64{},
 			},
 		},
 		{
 			name: "RawUrlBase64 encoded keys",
 			pkcs: generic.PKCS{
 				SecretKey: asym.SecretKey,
-				Encoder:   &generic.RawUrlBase64{},
+				Encoder:   &generic.RawURLBase64{},
 			},
 		},
 		{
@@ -277,7 +277,6 @@ func TestPKCS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			err = tt.pkcs.Export()
 			r.NoError(t, err)
 			t.Log("PKCS wrapped Ed25519 Secret Key", tt.pkcs.ExportData)

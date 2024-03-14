@@ -14,8 +14,7 @@ import (
 	"io"
 
 	"golang.org/x/crypto/chacha20poly1305"
-
-	// nolint:staticcheck
+	//nolint:staticcheck
 	"golang.org/x/crypto/poly1305"
 )
 
@@ -38,6 +37,7 @@ const (
 )
 
 func NewReader(key []byte, src io.Reader) (*Reader, error) {
+	//nolint:gomnd
 	if len(key) != 32 {
 		return nil, errors.New("key length must be 32 byte long")
 	}
@@ -136,6 +136,7 @@ func (r *Reader) readChunk() (last bool, err error) {
 }
 
 func incNonce(nonce *[chacha20poly1305.NonceSizeX]byte) {
+	//nolint:gomnd
 	for i := len(nonce) - 2; i >= 0; i-- {
 		nonce[i]++
 		if nonce[i] != 0 {
@@ -165,6 +166,7 @@ type Writer struct {
 }
 
 func NewWriter(key []byte, dst io.Writer) (*Writer, error) {
+	//nolint:gomnd
 	if len(key) != 32 {
 		return nil, errors.New("key length must be 32 byte long")
 	}
@@ -181,7 +183,7 @@ func NewWriter(key []byte, dst io.Writer) (*Writer, error) {
 }
 
 func (w *Writer) Write(p []byte) (n int, err error) {
-	// nolint:godox
+	//nolint:godox
 	// TODO: consider refactoring with a bytes.Buffer.
 	if w.err != nil {
 		return 0, w.err

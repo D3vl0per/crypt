@@ -11,7 +11,7 @@ type Obfuscation interface {
 	Deobfuscate([]byte) ([]byte, error)
 }
 
-// AgeV1Obf is a obfuscation for age encryption header
+// AgeV1Obf is a obfuscation for age encryption header.
 type AgeV1Obf struct{}
 
 var (
@@ -21,11 +21,9 @@ var (
 	endFlag = []byte{0, 255, 1, 254}
 )
 
-//nolint:gochecknoglobals
 const lengthOfKey = 47
 
 func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
-
 	headerIndex := bytes.Index(payload, endOfHeader)
 	if headerIndex == -1 {
 		return nil, errors.New("missing end flag")
@@ -41,7 +39,7 @@ func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
 		pad[i] = e ^ counter
 		counter--
 	}
-	// nolint:gocritic
+	//nolint:gocritic
 	obfHeader := append(pad, endFlag...)
 	return bytes.ReplaceAll(payload, header, obfHeader), nil
 }

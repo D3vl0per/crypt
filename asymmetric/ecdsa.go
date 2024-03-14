@@ -66,16 +66,15 @@ func (e *Ed25519) Sign(msg []byte) string {
 }
 
 func (e *Ed25519) Verify(msg []byte, sig string) (bool, error) {
-
 	if e.Encoder == nil {
 		return ed25519.Verify(e.PublicKey, msg, []byte(sig)), nil
-	} else {
-		sig_raw, err := e.Encoder.Decode(sig)
-		if err != nil {
-			return false, err
-		}
-		return ed25519.Verify(e.PublicKey, msg, sig_raw), nil
 	}
+	sigRaw, err := e.Encoder.Decode(sig)
+	if err != nil {
+		return false, err
+	}
+	return ed25519.Verify(e.PublicKey, msg, sigRaw), nil
+
 }
 
 func (e *Ed25519) GetSecretKey() []byte {
@@ -124,13 +123,12 @@ func (e *Ed448) Sign(msg []byte) string {
 func (e *Ed448) Verify(msg []byte, sig string) (bool, error) {
 	if e.Encoder == nil {
 		return ed448.Verify(e.PublicKey, msg, []byte(sig), e.Context), nil
-	} else {
-		sig_raw, err := e.Encoder.Decode(sig)
-		if err != nil {
-			return false, err
-		}
-		return ed448.Verify(e.PublicKey, msg, sig_raw, e.Context), nil
 	}
+	sigRaw, err := e.Encoder.Decode(sig)
+	if err != nil {
+		return false, err
+	}
+	return ed448.Verify(e.PublicKey, msg, sigRaw, e.Context), nil
 }
 
 func (e *Ed448) GetSecretKey() []byte {

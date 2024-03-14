@@ -68,7 +68,6 @@ type Parameters struct {
 }
 
 func (k Keychain) Encrypt(p Parameters) ([]byte, error) {
-
 	in, err := compressor(p)
 	if err != nil {
 		return nil, err
@@ -175,7 +174,6 @@ func compressor(p Parameters) (*bytes.Reader, error) {
 		}
 
 		in = bytes.NewReader(writer.Bytes())
-
 	} else {
 		in = bytes.NewReader(p.Data)
 	}

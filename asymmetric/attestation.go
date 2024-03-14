@@ -22,7 +22,6 @@ type Minimalistic struct {
 }
 
 func (m *Minimalistic) Sign(payload []byte) (string, error) {
-
 	if m.Suite == nil {
 		return "", errors.New("missing signing suite declaration")
 	}

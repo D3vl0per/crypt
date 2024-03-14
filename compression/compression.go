@@ -77,7 +77,6 @@ func (g *Gzip) Compress(in []byte) ([]byte, error) {
 }
 
 func (g *Gzip) CompressStream(in io.Reader, out io.Writer) error {
-
 	enc, err := gzip.NewWriterLevel(out, g.Level)
 	if err != nil {
 		return err
@@ -157,7 +156,6 @@ func (z *Zstd) Compress(in []byte) ([]byte, error) {
 }
 
 func (z *Zstd) CompressStream(in io.Reader, out io.Writer) error {
-
 	enc, err := zstd.NewWriter(out, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(z.Level)))
 	if err != nil {
 		return err
@@ -233,7 +231,6 @@ func (f *Flate) Compress(in []byte) ([]byte, error) {
 }
 
 func (f *Flate) CompressStream(in io.Reader, out io.Writer) error {
-
 	enc, err := flate.NewWriter(out, f.Level)
 	if err != nil {
 		return err
@@ -308,7 +305,6 @@ func (zl *Zlib) Compress(in []byte) ([]byte, error) {
 }
 
 func (zl *Zlib) CompressStream(in io.Reader, out io.Writer) error {
-
 	enc, err := zlib.NewWriterLevel(out, zl.Level)
 	if err != nil {
 		return err
@@ -389,7 +385,6 @@ func (b *Brotli) Compress(in []byte) ([]byte, error) {
 }
 
 func (b *Brotli) CompressStream(in io.Reader, out io.Writer) error {
-
 	b.bw.Reset(out)
 	_, err := io.Copy(b.bw, in)
 	if err != nil {
@@ -416,7 +411,6 @@ func (b *Brotli) Decompress(in []byte) ([]byte, error) {
 }
 
 func (b *Brotli) DecompressStream(in io.Reader, out io.Writer) error {
-
 	if err := b.br.Reset(in); err != nil {
 		return err
 	}
