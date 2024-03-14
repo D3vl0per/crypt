@@ -15,11 +15,11 @@ type Encoder interface {
 type Base64 struct{}
 
 // URLEncoding is the alternate base64 encoding defined in RFC 4648. It is typically used in URLs and file names.
-type UrlBase64 struct{}
+type URLBase64 struct{}
 
 // nolint: lll
 // RawURLEncoding is the unpadded alternate base64 encoding defined in RFC 4648. It is typically used in URLs and file names. This is the same as URLEncoding but omits padding characters.
-type RawUrlBase64 struct{}
+type RawURLBase64 struct{}
 
 // nolint: lll
 // RawStdEncoding is the standard raw, unpadded base64 encoding, as defined in RFC 4648 section 3.2. This is the same as StdEncoding but omits padding characters.
@@ -39,19 +39,19 @@ func (b *Base64) Decode(data string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(data)
 }
 
-func (b *UrlBase64) Encode(data []byte) string {
+func (b *URLBase64) Encode(data []byte) string {
 	return base64.URLEncoding.EncodeToString(data)
 }
 
-func (b *UrlBase64) Decode(data string) ([]byte, error) {
+func (b *URLBase64) Decode(data string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(data)
 }
 
-func (b *RawUrlBase64) Encode(data []byte) string {
+func (b *RawURLBase64) Encode(data []byte) string {
 	return base64.RawURLEncoding.EncodeToString(data)
 }
 
-func (b *RawUrlBase64) Decode(data string) ([]byte, error) {
+func (b *RawURLBase64) Decode(data string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(data)
 }
 

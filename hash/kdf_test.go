@@ -66,7 +66,6 @@ func TestArgon2ID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			argonString, err := tt.argon.Hash(data)
 			r.NoError(t, err)
 
@@ -189,7 +188,6 @@ func TestArgon2IDWrongParameters(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestWrongValidate(t *testing.T) {

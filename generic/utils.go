@@ -4,7 +4,7 @@ import (
 	"bytes"
 )
 
-// AllZero checks if all bytes in a slice are zero
+// AllZero checks if all bytes in a slice are zero.
 func AllZero(s []byte) bool {
 	for _, v := range s {
 		if v != 0 {
@@ -15,7 +15,7 @@ func AllZero(s []byte) bool {
 }
 
 // StrCnct concatenates strings into one
-// Example: StrCnct([]string{"a", "b", "c"}...) -> "abc"
+// Example: StrCnct([]string{"a", "b", "c"}...) -> "abc".
 func StrCnct(str ...string) string {
 	var buffer bytes.Buffer
 

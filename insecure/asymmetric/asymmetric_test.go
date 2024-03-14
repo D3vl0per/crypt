@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/D3vl0per/crypt/insecure/asymmetric"
-
 	a "github.com/stretchr/testify/assert"
 	r "github.com/stretchr/testify/require"
 )

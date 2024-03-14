@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
+const (
+	SecretBoxKeySize   = 32
+	SecretBoxNonceSize = 24
+)
+
 type Symmetric interface {
 	Encrypt([]byte, []byte) ([]byte, error)
 	Decrypt([]byte, []byte) ([]byte, error)
@@ -20,39 +25,39 @@ type Symmetric interface {
 type SecretBox struct{}
 
 func (s *SecretBox) Encrypt(key, payload []byte) ([]byte, error) {
-	if len(key) != 32 {
+	if len(key) != SecretBoxKeySize {
 		return nil, errors.New("invalid key size")
 	}
 
-	var secretKey [32]byte
+	var secretKey [SecretBoxKeySize]byte
 	subtle.ConstantTimeCopy(1, secretKey[:], key)
 
-	nonce_raw, err := generic.CSPRNG(24)
+	nonceRaw, err := generic.CSPRNG(SecretBoxNonceSize)
 	if err != nil {
 		return nil, err
 	}
 
-	var nonce [24]byte
-	subtle.ConstantTimeCopy(1, nonce[:], nonce_raw)
+	var nonce [SecretBoxNonceSize]byte
+	subtle.ConstantTimeCopy(1, nonce[:], nonceRaw)
 
 	return secretbox.Seal(nonce[:], payload, &nonce, &secretKey), nil
 }
 
 func (s *SecretBox) Decrypt(key, payload []byte) ([]byte, error) {
-	if len(key) != 32 {
+	if len(key) != SecretBoxKeySize {
 		return nil, errors.New("invalid key size")
 	}
-	var secretKey [32]byte
+	var secretKey [SecretBoxKeySize]byte
 	subtle.ConstantTimeCopy(1, secretKey[:], key)
 
-	if len(payload) < 24 {
+	if len(payload) < SecretBoxNonceSize {
 		return nil, errors.New("payload is too short")
 	}
 
 	var nonce [24]byte
-	subtle.ConstantTimeCopy(1, nonce[:], payload[:24])
+	subtle.ConstantTimeCopy(1, nonce[:], payload[:SecretBoxNonceSize])
 
-	decrypted, ok := secretbox.Open(nil, payload[24:], &nonce, &secretKey)
+	decrypted, ok := secretbox.Open(nil, payload[SecretBoxNonceSize:], &nonce, &secretKey)
 	if !ok {
 		return nil, errors.New("decryption error")
 	}

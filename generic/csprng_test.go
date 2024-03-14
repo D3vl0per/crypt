@@ -1,11 +1,10 @@
 package generic_test
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"reflect"
 	"testing"
-
-	"crypto/rand"
 
 	"github.com/D3vl0per/crypt/generic"
 	r "github.com/stretchr/testify/require"

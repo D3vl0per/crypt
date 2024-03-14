@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	AIterations  uint32 = 2
-	AMemory      uint32 = 1 * 64 * 1024
-	AParallelism uint8  = 4
-	AKeyLen      uint32 = 32
-	HKDFKeysize  int    = 32
+	AIterations    uint32 = 2
+	AMemory        uint32 = 1 * 64 * 1024
+	AParallelism   uint8  = 4
+	AKeyLen        uint32 = 32
+	HKDFKeysize    int    = 32
+	Argon2Saltsize int    = 16
 )
 
 type Kdf interface {
@@ -59,7 +60,8 @@ func (a *Argon2ID) argon2ID(data []byte) argonOutput {
 		",t=", strconv.FormatUint(uint64(a.Iterations), 10),
 		",p=", strconv.FormatInt(int64(a.Parallelism), 10),
 		"$", saltB64,
-		"$", hashB64}...,
+		"$", hashB64,
+	}...,
 	)
 
 	return argonOutput{
@@ -73,12 +75,12 @@ func (a *Argon2ID) argon2ID(data []byte) argonOutput {
 
 func (a *Argon2ID) Hash(data []byte) (string, error) {
 	if a.Salt != nil {
-		if len(a.Salt) != 16 {
+		if len(a.Salt) != Argon2Saltsize {
 			return "", errors.New("salt must be 16 byte long")
 		}
 	} else {
 		var err error
-		a.Salt, err = generic.CSPRNG(16)
+		a.Salt, err = generic.CSPRNG(int64(Argon2Saltsize))
 		if err != nil {
 			return "", err
 		}
@@ -137,7 +139,7 @@ func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {
 	re := regexp.MustCompile(pattern)
 
 	matches := re.FindStringSubmatch(input)
-
+	//nolint:gomnd
 	if len(matches) != 8 {
 		return Parameters{}, errors.New("invalid input format")
 	}
@@ -159,7 +161,7 @@ func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {
 		return Parameters{}, errors.New(generic.StrCnct([]string{"salt base64 decode error: ", err.Error()}...))
 	}
 
-	if len(parameters.Salt) != 16 {
+	if len(parameters.Salt) != Argon2Saltsize {
 		return Parameters{}, errors.New("salt must be 16 byte long")
 	}
 

@@ -10,7 +10,6 @@ import (
 )
 
 func TestMinimalisticAttestation(t *testing.T) {
-
 	ecdsa := asymmetric.Ed25519{}
 	err := ecdsa.Generate()
 	r.NoError(t, err)
@@ -108,7 +107,6 @@ func TestMinimalisticAttestation(t *testing.T) {
 }
 
 func TestFaultMinimalisticAttestation(t *testing.T) {
-
 	ecdsa := asymmetric.Ed25519{}
 	err := ecdsa.Generate()
 	r.NoError(t, err)

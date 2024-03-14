@@ -116,8 +116,6 @@ linters-settings:
     # See https://go-critic.github.io/overview#checks-overview
     # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`
     # By default list of stable checks is used.
-    enabled-checks:
-      - rangeValCopy
 
     # Which checks should be disabled; can't be combined with 'enabled-checks'; default is empty
     disabled-checks:
@@ -143,9 +141,6 @@ linters-settings:
       hugeParam:
         # size in bytes that makes the warning trigger (default 80)
         sizeThreshold: 1700 # TODO our context is 1648 bytes, we should consider increase this
-      nestingReduce:
-        # min number of statements inside a branch to trigger a warning (default 5)
-        bodyWidth: 5
       rangeExprCopy:
         # size in bytes that makes the warning trigger (default 512)
         sizeThreshold: 512
@@ -156,18 +151,6 @@ linters-settings:
         sizeThreshold: 1300 # TODO our transaction.Data is 1208 bytes, we should consider increase this
         # whether to check test functions (default true)
         skipTestFuncs: true
-      ruleguard:
-        # path to a gorules file for the ruleguard checker
-        rules: ''
-      truncateCmp:
-        # whether to skip int/uint/uintptr types (default true)
-        skipArchDependent: true
-      underef:
-        # whether to skip (*x).method() calls where x is a pointer receiver (default true)
-        skipRecvDeref: true
-      unnamedResult:
-        # whether to check exported functions
-        checkExported: true
 
   goimports:
     # put imports beginning with prefix after 3rd-party packages;
@@ -202,7 +185,7 @@ linters-settings:
 
   gosimple:
     # Select the Go version to target. The default is '1.13'.
-    go: "1.23"
+    go: "1.22.1"
     # https://staticcheck.io/docs/options#checks
     checks: [ "all" ]
 
@@ -230,7 +213,7 @@ linters-settings:
 
   staticcheck:
     # Select the Go version to target. The default is '1.13'.
-    go: "1.23"
+    go: "1.22.1"
     # https://staticcheck.io/docs/options#checks
     checks: [ "all" ]
 
@@ -273,7 +256,7 @@ linters-settings:
 
   unused:
     # Select the Go version to target. The default is '1.13'.
-    go: "1.23"
+    go: "1.22.1"
 
 
 linters:
@@ -293,9 +276,11 @@ linters:
     - gosimple
     - govet
     - staticcheck
-    - ifshort
     - lll
     - misspell
     - prealloc
     - unparam
     - unused
+    - gomnd
+    - forcetypeassert
+    - golint

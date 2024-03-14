@@ -49,7 +49,6 @@ func TestE2E(t *testing.T) {
 }
 
 func TestE2EFault(t *testing.T) {
-
 	type cases struct {
 		name        string
 		key         []byte

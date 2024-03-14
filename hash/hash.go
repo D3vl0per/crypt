@@ -9,9 +9,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-var (
-	ErrHmacSecretNil = errors.New("HMAC secret is nil")
-)
+var ErrHmacSecretNil = errors.New("HMAC secret is nil")
 
 type Algorithms interface {
 	// data

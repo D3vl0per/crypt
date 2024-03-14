@@ -42,6 +42,7 @@ func TestAllZero(t *testing.T) {
 		})
 	}
 }
+
 func TestStrCnct(t *testing.T) {
 	tests := []struct {
 		name string

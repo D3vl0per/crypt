@@ -1,18 +1,17 @@
 package hash_test
 
 import (
-	// "encoding/hex"
+	// "encoding/hex".
 	"encoding/hex"
 	"strings"
 	"testing"
 
 	hasher "github.com/D3vl0per/crypt/hash"
-	// a "github.com/stretchr/testify/assert"
+	// a "github.com/stretchr/testify/assert".
 	r "github.com/stretchr/testify/require"
 )
 
 func TestBlakes(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		algo     hasher.Algorithms
@@ -113,11 +112,9 @@ func TestBlakes(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestFaultBlakes(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		algo     hasher.Algorithms
@@ -211,7 +208,6 @@ func TestFaultBlakes(t *testing.T) {
 }
 
 func TestNilKeyError(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		algo     hasher.Algorithms

@@ -72,13 +72,13 @@ func TestE2EEEd25519SignVerify(t *testing.T) {
 		{
 			name: "UrlBase64 encoder",
 			asym: asymmetric.Ed25519{
-				Encoder: &generic.UrlBase64{},
+				Encoder: &generic.URLBase64{},
 			},
 		},
 		{
 			name: "RawUrlBase64 encoder",
 			asym: asymmetric.Ed25519{
-				Encoder: &generic.RawUrlBase64{},
+				Encoder: &generic.RawURLBase64{},
 			},
 		},
 		{
@@ -169,13 +169,13 @@ func TestE2EEEd448SignVerify(t *testing.T) {
 		{
 			name: "UrlBase64 encoder",
 			asym: asymmetric.Ed448{
-				Encoder: &generic.UrlBase64{},
+				Encoder: &generic.URLBase64{},
 			},
 		},
 		{
 			name: "RawUrlBase64 encoder",
 			asym: asymmetric.Ed448{
-				Encoder: &generic.RawUrlBase64{},
+				Encoder: &generic.RawURLBase64{},
 			},
 		},
 		{

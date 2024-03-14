@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// CSPRNG is a cryptographically secure pseudo-random number generator for byte slices
+// CSPRNG is a cryptographically secure pseudo-random number generator for byte slices.
 func CSPRNG(n int64) ([]byte, error) {
 	random := make([]byte, n)
 	if _, err := io.ReadFull(rand.Reader, random); err != nil {
@@ -16,13 +16,13 @@ func CSPRNG(n int64) ([]byte, error) {
 	return random, nil
 }
 
-// CSPRNGHex is a CSPRNG in hex format
+// CSPRNGHex is a CSPRNG in hex format.
 func CSPRNGHex(n int64) (string, error) {
 	rnd, err := CSPRNG(n)
 	return hex.EncodeToString(rnd), err
 }
 
-// HWRng is a hardware random number generator
+// HWRng is a hardware random number generator.
 func HWRng(n int64) ([]byte, error) {
 	file, err := os.Open("/dev/hwrng")
 	if err != nil {
