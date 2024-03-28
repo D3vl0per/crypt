@@ -2,16 +2,29 @@ package hash_test
 
 import (
 	// "encoding/hex".
-	"encoding/hex"
+
 	"strings"
 	"testing"
 
+	"github.com/D3vl0per/crypt/generic"
 	hasher "github.com/D3vl0per/crypt/hash"
+
 	// a "github.com/stretchr/testify/assert".
 	r "github.com/stretchr/testify/require"
 )
 
 func TestBlakes(t *testing.T) {
+	encoders := []generic.Encoder{
+		nil,
+		&generic.Hex{},
+		&generic.Base64{},
+		&generic.PaddinglessBase32{},
+		&generic.RawBase64{},
+		&generic.RawURLBase64{},
+		&generic.URLBase64{},
+		&generic.Base32{},
+	}
+
 	tests := []struct {
 		name     string
 		algo     hasher.Algorithms
@@ -90,28 +103,54 @@ func TestBlakes(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			if strings.Contains(test.name, "HMAC") {
-				hash, err := test.algo.Hmac(test.data)
-				r.NoError(t, err)
-				t.Log("Hash: ", hex.EncodeToString(hash))
-				r.Equal(t, test.expected, hash)
-
-				validate, err := test.algo.ValidateHmac(test.data, hash)
-				r.NoError(t, err)
-				r.True(t, validate)
-			} else {
-				hash, err := test.algo.Hash(test.data)
-				r.NoError(t, err)
-				t.Log("Hash: ", hex.EncodeToString(hash))
-				r.Equal(t, test.expected, hash)
-
-				validate, err := test.algo.ValidateHash(test.data, hash)
-				r.NoError(t, err)
-				r.True(t, validate)
+		for _, encoder := range encoders {
+			test.algo.SetEncoder(encoder)
+			testName := test.name
+			if encoder != nil {
+				testName = test.name + "/" + encoder.GetName()
 			}
-		})
+
+			t.Run(testName, func(t *testing.T) {
+				if strings.Contains(test.name, "HMAC") {
+					hash, err := test.algo.Hmac(test.data)
+					r.NoError(t, err)
+					t.Log("Raw hash: ", string(hash))
+
+					hash, err = decoder(test.algo, hash)
+					r.NoError(t, err)
+					r.Equal(t, test.expected, hash)
+
+					validate, err := test.algo.ValidateHmac(test.data, hash)
+					r.NoError(t, err)
+					r.True(t, validate)
+				} else {
+					hash, err := test.algo.Hash(test.data)
+					r.NoError(t, err)
+					t.Log("Raw hash: ", string(hash))
+
+					hash, err = decoder(test.algo, hash)
+					r.NoError(t, err)
+
+					r.Equal(t, test.expected, hash)
+
+					validate, err := test.algo.ValidateHash(test.data, hash)
+					r.NoError(t, err)
+					r.True(t, validate)
+				}
+			})
+		}
 	}
+}
+
+func decoder(algo hasher.Algorithms, hashed []byte) ([]byte, error) {
+	if algo.GetEncoder() != nil {
+		hash, err := algo.GetEncoder().Decode(string(hashed))
+		if err != nil {
+			return nil, err
+		}
+		return hash, nil
+	}
+	return hashed, nil
 }
 
 func TestFaultBlakes(t *testing.T) {
