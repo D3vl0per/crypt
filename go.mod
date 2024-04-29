@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	filippo.io/age v1.1.1
 	github.com/andybalholm/brotli v1.1.0
-	github.com/cloudflare/circl v1.3.7
+	github.com/cloudflare/circl v1.3.8
 	github.com/klauspost/compress v1.17.7
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/crypto v0.21.0
