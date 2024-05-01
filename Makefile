@@ -4,6 +4,9 @@ lint:
 test:
 	go clean -testcache && go test -race -cover ./...
 
+fast-test:
+	go test ./...
+
 test-v:
 	go clean -testcache && go test ./... -v
 

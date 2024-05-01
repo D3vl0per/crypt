@@ -32,7 +32,6 @@ func TestObf(t *testing.T) {
 		Data:       obfTestData,
 		Compressor: &compression.Zstd{Level: 11},
 	})
-
 	r.NoError(t, err)
 
 	a.True(t, bytes.Contains(obfEncrypted, []byte("age-encryption.org/v1")))
@@ -51,7 +50,6 @@ func TestObf(t *testing.T) {
 		Compressor: &compression.Zstd{
 			Level: 11,
 		},
-		Obfuscator: &aged.AgeV1Obf{},
 	})
 	r.NoError(t, err)
 
