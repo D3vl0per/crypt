@@ -6,6 +6,7 @@ import (
 	"errors"
 )
 
+// Age keyslot header obfuscation
 type Obfuscation interface {
 	Obfuscate([]byte) ([]byte, error)
 	Deobfuscate([]byte) ([]byte, error)

@@ -130,9 +130,10 @@ func TestWrongEd25519KGenerationFromSeeed(t *testing.T) {
 	r.EqualError(t, err, "seed size must be 32 bytes long")
 }
 
-func TestWrongEd25519ToPublicKey(t *testing.T) {
+func TestWrongCryptoToPublicKey(t *testing.T) {
 	invalidKey := "not a public key"
-	_, err := asymmetric.Ed25519ToPublicKey(invalidKey)
+	asym := asymmetric.Ed25519{}
+	_, err := asym.CryptoToPublicKey(invalidKey)
 	r.ErrorContains(t, err, "public key type")
 }
 
@@ -286,6 +287,7 @@ func TestWrongEd448KGenerationFromSeeed(t *testing.T) {
 
 func TestWrongEd448ToPublicKey(t *testing.T) {
 	invalidKey := "not a public key"
-	_, err := asymmetric.Ed448ToPublicKey(invalidKey)
+	asym := asymmetric.Ed448{}
+	_, err := asym.CryptoToPublicKey(invalidKey)
 	r.ErrorContains(t, err, "public key type")
 }

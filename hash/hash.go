@@ -3,6 +3,10 @@ package hash
 import (
 	"errors"
 
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/sha512"
+
 	"github.com/D3vl0per/crypt/generic"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
@@ -28,6 +32,19 @@ type Blake2b384 struct {
 	Encoder    generic.Encoder
 }
 type Blake2b512 struct {
+	HmacSecret []byte
+	Encoder    generic.Encoder
+}
+
+type Sha2256 struct {
+	HmacSecret []byte
+	Encoder    generic.Encoder
+}
+type Sha2384 struct {
+	HmacSecret []byte
+	Encoder    generic.Encoder
+}
+type Sha2512 struct {
 	HmacSecret []byte
 	Encoder    generic.Encoder
 }
@@ -239,6 +256,231 @@ func (b *Blake2b512) GetEncoder() generic.Encoder {
 	}
 
 	return b.Encoder
+}
+
+///
+/// SHA-256
+///
+
+func (s *Sha2256) Hash(plaintext []byte) ([]byte, error) {
+	hash, err := hashSha2256(nil, plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(s.Encoder, hash), nil
+}
+
+func (s *Sha2256) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
+	hashed, err := hashSha2256(nil, plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func (s *Sha2256) Hmac(plaintext []byte) ([]byte, error) {
+	if s.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+
+	hash, err := hashSha2256(s.HmacSecret, plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(s.Encoder, hash), nil
+}
+
+func (s *Sha2256) ValidateHmac(plaintext, expectedHash []byte) (bool, error) {
+	if s.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+
+	hashed, err := hashSha2256(s.HmacSecret, plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func hashSha2256(key, plaintext []byte) ([]byte, error) {
+	hash := sha256.New()
+
+	if key != nil {
+		hmac := hmac.New(sha256.New, key)
+		if _, err := hmac.Write(plaintext); err != nil {
+			return nil, err
+		}
+		return hmac.Sum(nil), nil
+	}
+
+	if _, err := hash.Write(plaintext); err != nil {
+		return nil, err
+	}
+
+	return hash.Sum(nil), nil
+}
+
+func (s *Sha2256) SetEncoder(encoder generic.Encoder) {
+	s.Encoder = encoder
+}
+
+func (s *Sha2256) GetEncoder() generic.Encoder {
+	if s.Encoder == nil {
+		return nil
+	}
+	return s.Encoder
+}
+
+///
+/// SHA-384
+///
+
+func (s *Sha2384) Hash(plaintext []byte) ([]byte, error) {
+	hash, err := hashSha2384(nil, plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(s.Encoder, hash), nil
+}
+
+func (s *Sha2384) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
+	hashed, err := hashSha2384(nil, plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func (s *Sha2384) Hmac(plaintext []byte) ([]byte, error) {
+	if s.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+
+	hash, err := hashSha2384(s.HmacSecret, plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(s.Encoder, hash), nil
+}
+
+func (s *Sha2384) ValidateHmac(plaintext, expectedHash []byte) (bool, error) {
+	if s.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+
+	hashed, err := hashSha2384(s.HmacSecret, plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func hashSha2384(key, plaintext []byte) ([]byte, error) {
+	hash := sha512.New384()
+
+	if key != nil {
+		hmac := hmac.New(sha512.New384, key)
+		if _, err := hmac.Write(plaintext); err != nil {
+			return nil, err
+		}
+		return hmac.Sum(nil), nil
+	}
+
+	if _, err := hash.Write(plaintext); err != nil {
+		return nil, err
+	}
+
+	return hash.Sum(nil), nil
+}
+
+func (s *Sha2384) SetEncoder(encoder generic.Encoder) {
+	s.Encoder = encoder
+}
+
+func (s *Sha2384) GetEncoder() generic.Encoder {
+	if s.Encoder == nil {
+		return nil
+	}
+	return s.Encoder
+}
+
+///
+/// SHA-512
+///
+
+func (s *Sha2512) Hash(plaintext []byte) ([]byte, error) {
+	hash, err := hashSha2512(nil, plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(s.Encoder, hash), nil
+}
+
+func (s *Sha2512) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
+	hashed, err := hashSha2512(nil, plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func (s *Sha2512) Hmac(plaintext []byte) ([]byte, error) {
+	if s.HmacSecret == nil {
+		return nil, ErrHmacSecretNil
+	}
+
+	hash, err := hashSha2512(s.HmacSecret, plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(s.Encoder, hash), nil
+}
+
+func (s *Sha2512) ValidateHmac(plaintext, expectedHash []byte) (bool, error) {
+	if s.HmacSecret == nil {
+		return false, ErrHmacSecretNil
+	}
+
+	hashed, err := hashSha2512(s.HmacSecret, plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func hashSha2512(key, plaintext []byte) ([]byte, error) {
+	hash := sha512.New()
+
+	if key != nil {
+		hmac := hmac.New(sha512.New, key)
+		if _, err := hmac.Write(plaintext); err != nil {
+			return nil, err
+		}
+		return hmac.Sum(nil), nil
+	}
+
+	if _, err := hash.Write(plaintext); err != nil {
+		return nil, err
+	}
+
+	return hash.Sum(nil), nil
+}
+
+func (s *Sha2512) SetEncoder(encoder generic.Encoder) {
+	s.Encoder = encoder
+}
+
+func (s *Sha2512) GetEncoder() generic.Encoder {
+	if s.Encoder == nil {
+		return nil
+	}
+	return s.Encoder
 }
 
 ///
