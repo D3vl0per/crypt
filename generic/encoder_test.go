@@ -67,3 +67,14 @@ func TestE2EEncode(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomEncoderError(t *testing.T){
+	data := []byte("I'd just like to interject for a moment.")
+	encoder := &generic.Custom{}
+
+	emptyString := encoder.Encode(data)
+	r.Len(t, emptyString, 0)
+
+	_, err := encoder.Decode("test")
+	r.ErrorIs(t, err, generic.ErrCustomEncoderIsNil)
+}

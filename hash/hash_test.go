@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
+	"github.com/D3vl0per/crypt/hash"
 	hasher "github.com/D3vl0per/crypt/hash"
 
 	// a "github.com/stretchr/testify/assert".
@@ -264,12 +265,12 @@ func TestHashErrors(t *testing.T) {
 			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
 			err:  hasher.ErrHmacSecretNil,
 		},
-		/*{
+		{
 			name: "Blake2s128",
 			algo: &hasher.Blake2s128{},
 			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
-			err:  errors.New("blake2s: a key is required for a 128-bit hash"),
-		},*/
+			err:  hash.ErrBlake2s128Key,
+		},
 		{
 			name: "Blake2s128 HMAC",
 			algo: &hasher.Blake2s128{},
@@ -325,18 +326,22 @@ func TestHashErrors(t *testing.T) {
 			t.Parallel()
 			if strings.Contains(test.name, "HMAC") {
 				hash, err := test.algo.Hmac(test.data)
+				r.NotNil(t, err)
 				r.ErrorIs(t, err, test.err)
 				r.Empty(t, hash)
 
 				validate, err := test.algo.ValidateHmac(test.data, hash)
+				r.NotNil(t, err)
 				r.ErrorIs(t, err, test.err)
 				r.False(t, validate)
 			} else {
 				hash, err := test.algo.Hash(test.data)
+				r.NotNil(t, err)
 				r.ErrorIs(t, err, test.err)
 				r.Empty(t, hash)
 
 				validate, err := test.algo.ValidateHash(test.data, hash)
+				r.NotNil(t, err)
 				r.ErrorIs(t, err, test.err)
 				r.False(t, validate)
 			}

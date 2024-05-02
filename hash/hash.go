@@ -14,6 +14,7 @@ import (
 )
 
 var ErrHmacSecretNil = errors.New("HMAC secret is nil")
+var ErrBlake2s128Key = errors.New("blake2s: a key is required for a 128-bit hash")
 
 type Algorithms interface {
 	Hash(plaintext []byte) ([]byte, error)
@@ -273,20 +274,11 @@ func (b *Blake2b512) GetEncoder() generic.Encoder {
 ///
 
 func (b *Blake2s128) Hash(plaintext []byte) ([]byte, error) {
-	hash, err := hashBlake2s128(nil, plaintext)
-	if err != nil {
-		return nil, err
-	}
-	return encoder(b.Encoder, hash), nil
+	return []byte{}, ErrBlake2s128Key
 }
 
 func (b *Blake2s128) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
-	hashed, err := hashBlake2s128(nil, plaintext)
-	if err != nil {
-		return false, err
-	}
-
-	return generic.Compare(hashed, expectedHash), nil
+	return false, ErrBlake2s128Key
 }
 
 func (b *Blake2s128) Hmac(plaintext []byte) ([]byte, error) {

@@ -4,7 +4,10 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 )
+
+var ErrCustomEncoderIsNil = errors.New("custom encoder is nil")
 
 type Encoder interface {
 	Encode([]byte) string
@@ -164,7 +167,7 @@ func (c *Custom) Encode(data []byte) string {
 
 func (c *Custom) Decode(data string) ([]byte, error) {
 	if c.Decoder == nil {
-		return nil, nil
+		return nil, ErrCustomEncoderIsNil
 	}
 	return c.Decoder(data)
 }
