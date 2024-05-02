@@ -130,10 +130,6 @@ func EncryptWithPwd(p Parameters, pwd string) ([]byte, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	if _, err := io.Copy(w, in); err != nil {
 		return nil, err
 	}

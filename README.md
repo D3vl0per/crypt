@@ -38,6 +38,8 @@
     - ECDH
         - Curve25519
 - Hash
+    - Blake2s-128
+    - Blake2s-256
     - Blake2b-256
     - Blake2b-384
     - Blake2b-512

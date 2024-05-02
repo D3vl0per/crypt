@@ -74,3 +74,40 @@ func TestStrCnct(t *testing.T) {
 		})
 	}
 }
+
+func TestIsRepeatingSequence(t *testing.T) {
+	tests := []struct {
+		name string
+		key  []byte
+		want bool
+	}{
+		{
+			name: "Empty key",
+			key:  []byte{},
+			want: false,
+		},
+		{
+			name: "Non-repeating sequence",
+			key:  []byte{1, 2, 3, 4, 5},
+			want: false,
+		},
+		{
+			name: "Repeating sequence",
+			key:  []byte{1, 1, 1, 1, 1},
+			want: true,
+		},
+		{
+			name: "Long repeating sequence",
+			key:  []byte{1, 2, 3, 1, 2, 3, 1, 2, 3},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := generic.IsRepeatingSequence(tt.key); got != tt.want {
+				t.Errorf("IsRepeatingSequence() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

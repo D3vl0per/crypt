@@ -32,6 +32,11 @@ type PaddinglessBase32 struct{}
 
 type Hex struct{}
 
+type Custom struct {
+	Encoder func([]byte) string
+	Decoder func(string) ([]byte, error)
+}
+
 ///
 /// Base64
 ///
@@ -145,3 +150,27 @@ func (h *Hex) Decode(data string) ([]byte, error) {
 func (h *Hex) GetName() string {
 	return "hex"
 }
+
+
+///
+/// Custom encoder
+///
+
+func (c *Custom) Encode(data []byte) string {
+	if c.Encoder == nil {
+		return ""
+	}
+	return c.Encoder(data)
+}
+
+func (c *Custom) Decode(data string) ([]byte, error) {
+	if c.Decoder == nil {
+		return nil, nil
+	}
+	return c.Decoder(data)
+}
+
+func (c *Custom) GetName() string {
+	return "custom"
+}
+

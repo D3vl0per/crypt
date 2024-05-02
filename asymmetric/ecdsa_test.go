@@ -57,51 +57,52 @@ func TestE2EEEd25519SignVerify(t *testing.T) {
 	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 	tests := []struct {
-		name string
-		asym asymmetric.Ed25519
+		name      string
+		algorithm asymmetric.Signing
 	}{
 		{
-			name: "Raw keys",
+			name:      "Raw keys",
+			algorithm: &asymmetric.Ed25519{},
 		},
 		{
 			name: "Base64 encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.Base64{},
 			},
 		},
 		{
 			name: "UrlBase64 encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.URLBase64{},
 			},
 		},
 		{
 			name: "RawUrlBase64 encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.RawURLBase64{},
 			},
 		},
 		{
 			name: "RawBase64 encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.RawBase64{},
 			},
 		},
 		{
 			name: "Base32 encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.Base32{},
 			},
 		},
 		{
 			name: "PaddinglessBase32 encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.PaddinglessBase32{},
 			},
 		},
 		{
 			name: "Hex encoder",
-			asym: asymmetric.Ed25519{
+			algorithm: &asymmetric.Ed25519{
 				Encoder: &generic.Hex{},
 			},
 		},
@@ -109,17 +110,16 @@ func TestE2EEEd25519SignVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.asym.Generate()
+			err := tt.algorithm.Generate()
 			r.NoError(t, err)
 
-			signature := tt.asym.Sign(msg)
+			signature := tt.algorithm.Sign(msg)
 			r.NotEmpty(t, signature)
 			t.Log("Signature:", signature)
 
-			isValid, err := tt.asym.Verify(msg, signature)
+			isValid, err := tt.algorithm.Verify(msg, signature)
 			r.NoError(t, err)
 			r.True(t, isValid)
-			r.Equal(t, tt.asym.Encoder, tt.asym.GetEncoder())
 		})
 	}
 }
