@@ -7,38 +7,38 @@ import (
 	r "github.com/stretchr/testify/require"
 )
 
-func TestE2EEncode(t *testing.T){
+func TestE2EEncode(t *testing.T) {
 	data := []byte("I'd just like to interject for a moment.")
 	tests := []struct {
-		name string
+		name    string
 		encoder generic.Encoder
 	}{
 		{
-			name: "base64",
+			name:    "base64",
 			encoder: &generic.Base64{},
 		},
 		{
-			name: "urlbase64",
+			name:    "urlbase64",
 			encoder: &generic.URLBase64{},
 		},
 		{
-			name: "rawurlbase64",
+			name:    "rawurlbase64",
 			encoder: &generic.RawURLBase64{},
 		},
 		{
-			name: "rawbase64",
+			name:    "rawbase64",
 			encoder: &generic.RawBase64{},
 		},
 		{
-			name: "base32",
+			name:    "base32",
 			encoder: &generic.Base32{},
 		},
 		{
-			name: "paddinglessbase32",
+			name:    "paddinglessbase32",
 			encoder: &generic.PaddinglessBase32{},
 		},
 		{
-			name: "hex",
+			name:    "hex",
 			encoder: &generic.Hex{},
 		},
 		{

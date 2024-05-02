@@ -151,7 +151,6 @@ func (h *Hex) GetName() string {
 	return "hex"
 }
 
-
 ///
 /// Custom encoder
 ///
@@ -173,4 +172,3 @@ func (c *Custom) Decode(data string) ([]byte, error) {
 func (c *Custom) GetName() string {
 	return "custom"
 }
-
