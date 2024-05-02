@@ -15,7 +15,7 @@ func TestReadFileContent(t *testing.T) {
 
 	expectedData, err := generic.CSPRNG(256)
 	r.NoError(t, err)
-	
+
 	_, err = tempFile.Write(expectedData)
 	r.NoError(t, err)
 

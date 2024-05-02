@@ -140,7 +140,8 @@ func FileWalkByName(startPath, name string) ([]string, error) {
 
 func ReadFileContent(path string) ([]byte, error) {
 	// #do-not-check-gosec
-	j, err := os.OpenFile(path, os.O_RDONLY, 0o666)
+	// read only
+	j, err := os.OpenFile(path, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
 	}
