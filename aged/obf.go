@@ -15,6 +15,11 @@ type Obfuscation interface {
 // AgeV1Obf is a obfuscation for age encryption header.
 type AgeV1Obf struct{}
 
+type CustomObf struct {
+	Encoder func([]byte) ([]byte, error)
+	Decoder func([]byte) ([]byte, error)
+}
+
 var (
 	//nolint:gochecknoglobals
 	endOfHeader = []byte{45, 45, 45, 32}
@@ -24,13 +29,17 @@ var (
 
 const lengthOfKey = 47
 
+var ErrMissingFlag = errors.New("missing end flag")
+var ErrInvalidHeaderLength = errors.New("invalid header length")
+var ErrInvalidHeader = errors.New("invalid header")
+
 func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
 	headerIndex := bytes.Index(payload, endOfHeader)
 	if headerIndex == -1 {
-		return nil, errors.New("missing end flag")
+		return nil, ErrMissingFlag
 	}
 	if headerIndex+lengthOfKey > len(payload) {
-		return nil, errors.New("invalid header length")
+		return nil, ErrInvalidHeaderLength
 	}
 	header := payload[:headerIndex+lengthOfKey]
 	pad := make([]byte, len(header))
@@ -48,14 +57,14 @@ func (a *AgeV1Obf) Obfuscate(payload []byte) ([]byte, error) {
 func (a *AgeV1Obf) Deobfuscate(payload []byte) ([]byte, error) {
 	headerIndex := bytes.Index(payload, endFlag)
 	if headerIndex == -1 {
-		return nil, errors.New("missing end flag")
+		return nil, ErrMissingFlag
 	}
 	if headerIndex+len(endFlag) > len(payload) {
-		return nil, errors.New("invalid header")
+		return nil, ErrInvalidHeader
 	}
 	header := payload[:headerIndex+len(endFlag)]
 	if len(header) < len(endFlag) {
-		return nil, errors.New("invalid header length")
+		return nil, ErrInvalidHeaderLength
 	}
 
 	pad := make([]byte, len(header)-len(endFlag))
@@ -67,4 +76,18 @@ func (a *AgeV1Obf) Deobfuscate(payload []byte) ([]byte, error) {
 	}
 
 	return bytes.ReplaceAll(payload, header, pad), nil
+}
+
+func (c *CustomObf) Obfuscate(payload []byte) ([]byte, error) {
+	if c.Encoder == nil {
+		return nil, ErrMissingFlag
+	}
+	return c.Encoder(payload)
+}
+
+func (c *CustomObf) Deobfuscate(payload []byte) ([]byte, error) {
+	if c.Decoder == nil {
+		return nil, ErrMissingFlag
+	}
+	return c.Decoder(payload)
 }

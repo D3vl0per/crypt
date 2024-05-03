@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
-	"github.com/D3vl0per/crypt/hash"
 	hasher "github.com/D3vl0per/crypt/hash"
 
 	// a "github.com/stretchr/testify/assert".
@@ -165,12 +164,38 @@ func TestE2EEHash(t *testing.T) {
 			//nolint:lll
 			expected: []byte{7, 12, 136, 242, 52, 34, 149, 21, 90, 179, 201, 78, 111, 162, 72, 47, 57, 9, 20, 251, 41, 53, 34, 150, 35, 230, 251, 143, 10, 213, 105, 145, 163, 98, 112, 26, 5, 6, 150, 217, 149, 163, 249, 18, 101, 241, 179, 141, 239, 123, 34, 34, 94, 200, 237, 216, 15, 167, 204, 82, 211, 17, 63, 235},
 		},
+		// https://www.online-python.com/2thN8eQ4Kd
+		{
+			name: "SHA3-224",
+			algo: &hasher.Sha3224{},
+			data: data,
+			//nolint:lll
+			expected: []byte{123, 237, 200, 190, 231, 27, 69, 68, 162, 125, 249, 205, 245, 220, 22, 119, 99, 121, 240, 242, 115, 45, 255, 39, 33, 4, 226, 28},
+		},
+		{
+			name: "SHA3-224 HMAC",
+			algo: &hasher.Sha3224{
+				HmacSecret: secret,
+			},
+			data: data,
+			//nolint:lll
+			expected: []byte{42, 179, 92, 92, 196, 134, 154, 181, 192, 228, 159, 201, 197, 214, 113, 12, 210, 242, 210, 60, 211, 173, 90, 135, 46, 190, 84, 59},
+		},
 		{
 			name: "SHA3-256",
 			algo: &hasher.Sha3256{},
 			data: data,
 			//nolint:lll
 			expected: []byte{195, 62, 41, 181, 107, 38, 110, 3, 129, 21, 52, 217, 117, 49, 247, 163, 218, 89, 94, 205, 254, 161, 207, 196, 114, 73, 155, 161, 61, 38, 229, 59},
+		},
+		{
+			name: "SHA3-256 HMAC",
+			algo: &hasher.Sha3256{
+				HmacSecret: secret,
+			},
+			data: data,
+			//nolint:lll
+			expected: []byte{190, 4, 13, 7, 148, 7, 59, 25, 245, 229, 182, 253, 1, 45, 142, 127, 132, 14, 70, 143, 13, 125, 143, 195, 153, 168, 90, 131, 46, 254, 188, 88},
 		},
 		{
 			name: "SHA3-384",
@@ -180,11 +205,29 @@ func TestE2EEHash(t *testing.T) {
 			expected: []byte{13, 164, 89, 48, 108, 199, 207, 244, 184, 228, 229, 210, 233, 175, 29, 85, 79, 200, 21, 45, 82, 193, 210, 227, 195, 78, 6, 230, 102, 127, 126, 121, 118, 120, 44, 105, 214, 238, 75, 46, 166, 133, 61, 161, 228, 2, 6, 46},
 		},
 		{
+			name: "SHA3-384 HMAC",
+			algo: &hasher.Sha3384{
+				HmacSecret: secret,
+			},
+			data: data,
+			//nolint:lll
+			expected: []byte{180, 234, 120, 139, 110, 246, 8, 96, 38, 161, 118, 117, 125, 196, 181, 26, 190, 54, 4, 178, 38, 10, 235, 250, 131, 182, 99, 227, 149, 190, 127, 130, 252, 224, 55, 231, 178, 38, 50, 212, 224, 245, 243, 56, 15, 46, 250, 152},
+		},
+		{
 			name: "SHA3-512",
 			algo: &hasher.Sha3512{},
 			data: data,
 			//nolint:lll
 			expected: []byte{125, 21, 172, 36, 13, 53, 250, 136, 28, 214, 188, 8, 227, 249, 19, 86, 128, 200, 212, 106, 225, 41, 67, 3, 81, 115, 58, 187, 209, 129, 44, 191, 163, 205, 134, 207, 246, 127, 72, 31, 9, 11, 33, 184, 131, 16, 44, 152, 2, 55, 71, 215, 195, 73, 233, 147, 80, 13, 79, 131, 146, 100, 38, 202},
+		},
+		{
+			name: "SHA3-512 HMAC",
+			algo: &hasher.Sha3512{
+				HmacSecret: secret,
+			},
+			data: data,
+			//nolint:lll
+			expected: []byte{62, 90, 106, 154, 156, 175, 100, 184, 63, 15, 68, 163, 213, 182, 24, 243, 36, 68, 68, 37, 103, 225, 4, 104, 209, 65, 10, 211, 59, 49, 142, 76, 158, 209, 197, 144, 65, 227, 33, 54, 201, 149, 142, 218, 4, 93, 7, 57, 232, 25, 39, 234, 202, 216, 103, 197, 113, 123, 113, 85, 208, 28, 237, 36},
 		},
 	}
 
@@ -269,7 +312,7 @@ func TestHashErrors(t *testing.T) {
 			name: "Blake2s128",
 			algo: &hasher.Blake2s128{},
 			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
-			err:  hash.ErrBlake2s128Key,
+			err:  hasher.ErrBlake2s128Key,
 		},
 		{
 			name: "Blake2s128 HMAC",
@@ -322,6 +365,7 @@ func TestHashErrors(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			if strings.Contains(test.name, "HMAC") {
