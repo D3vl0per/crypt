@@ -33,7 +33,7 @@ func Delete(targetPath string, cycle int) error {
 			return err
 		}
 		if n != int(fileInfo.Size()) {
-			return errors.New("owerwrite bytes mismatch")
+			return errors.New("overwrite bytes mismatch")
 		}
 		// Owerwrites with random
 		rnd, err := CSPRNG(fileInfo.Size())
@@ -45,7 +45,7 @@ func Delete(targetPath string, cycle int) error {
 			return err
 		}
 		if n != int(fileInfo.Size()) {
-			return errors.New("rand owerwrite bytes mismatch")
+			return errors.New("rand overwrite bytes mismatch")
 		}
 	}
 
@@ -88,7 +88,7 @@ func Overwrite(targetPath string, data []byte, cycle int) error {
 		}
 
 		if n != int(fileInfo.Size()) {
-			return errors.New("owerwrite bytes mismatch")
+			return errors.New("overwrite bytes mismatch")
 		}
 		// Owerwrites with random
 		rnd, err := CSPRNG(fileInfo.Size())
@@ -101,7 +101,7 @@ func Overwrite(targetPath string, data []byte, cycle int) error {
 			return err
 		}
 		if n != int(fileInfo.Size()) {
-			return errors.New("rand owerwrite bytes mismatch")
+			return errors.New("rand overwrite bytes mismatch")
 		}
 	}
 	n, err := file.Write(data)

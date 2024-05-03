@@ -55,8 +55,8 @@
     - SHAKE-256 (planned)
     - go_simhash (planned)
     - Argon2id
-    - Scrypt (planed)
-    - HKDF (planed)
+    - Scrypt (planned)
+    - HKDF (planned)
 - Compression
     - flate
     - gzip

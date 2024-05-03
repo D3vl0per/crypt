@@ -172,7 +172,7 @@ func TestArgon2IDWrongParameters(t *testing.T) {
 	}
 
 	argon := hasher.Argon2ID{}
-	for _, tt := range tests {	
+	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
