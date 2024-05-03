@@ -345,6 +345,12 @@ func TestHashErrors(t *testing.T) {
 			err:  hasher.ErrHmacSecretNil,
 		},
 		{
+			name: "SHA3-224 HMAC",
+			algo: &hasher.Sha3224{},
+			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
+			err:  hasher.ErrHmacSecretNil,
+		},
+		{
 			name: "SHA3-256 HMAC",
 			algo: &hasher.Sha3256{},
 			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
@@ -389,6 +395,8 @@ func TestHashErrors(t *testing.T) {
 				r.ErrorIs(t, err, test.err)
 				r.False(t, validate)
 			}
+			encoder := test.algo.GetEncoder()
+			r.Nil(t, encoder)
 		})
 	}
 }
