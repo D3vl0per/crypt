@@ -1,73 +1,149 @@
 package generic_test
 
 import (
-	"bytes"
-	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/D3vl0per/crypt/generic"
 	r "github.com/stretchr/testify/require"
 )
 
-func TestDelete(t *testing.T) {
-	// Create a temporary file for testing
-	tempFile, err := os.CreateTemp("", "testfile")
+func TestWriteAndFlush(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "writeandflush.txt")
 	r.NoError(t, err)
-
 	defer os.Remove(tempFile.Name())
 
-	// Write some data to the temporary file
-	data := []byte("test data")
-	_, err = tempFile.Write(data)
+	notExpectedData, err := generic.CSPRNG(256)
 	r.NoError(t, err)
 
-	// Close the file before deleting it
+	_, err = tempFile.Write(notExpectedData)
+	r.NoError(t, err)
+
+	err = tempFile.Sync()
+	r.NoError(t, err)
 	err = tempFile.Close()
 	r.NoError(t, err)
 
-	// Call the Delete function with the temporary file path
+	expectedData, err := generic.CSPRNG(256)
+	r.NoError(t, err)
+
+	overwriteFile, err := os.Create(tempFile.Name())
+	r.NoError(t, err)
+
+	n, err := generic.WriteAndFlush(overwriteFile, expectedData)
+	r.NoError(t, err)
+
+	r.Equal(t, len(expectedData), n)
+
+	overwrite, err := generic.ReadFileContent(tempFile.Name())
+	r.NoError(t, err)
+
+	r.NotEqual(t, notExpectedData, overwrite)
+}
+
+func TestReadFileContent(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "readfilecontent.txt")
+	r.NoError(t, err)
+	defer os.Remove(tempFile.Name())
+
+	expectedData, err := generic.CSPRNG(256)
+	r.NoError(t, err)
+
+	_, err = tempFile.Write(expectedData)
+	r.NoError(t, err)
+
+	data, err := generic.ReadFileContent(tempFile.Name())
+	r.NoError(t, err)
+	r.Equal(t, expectedData, data)
+}
+
+func TestFileWalkByName(t *testing.T) {
+	startPath := "/tmp"
+	name := "file.txt"
+
+	// Create temporary test files
+	tempFiles := []string{
+		filepath.Join(startPath, "file.txt"),
+		filepath.Join(startPath, "subdir1", "file.txt"),
+		filepath.Join(startPath, "subdir2", "file.txt"),
+		filepath.Join(startPath, "subdir2", "file2.txt"),
+	}
+	for _, tempFile := range tempFiles {
+		err := os.MkdirAll(filepath.Dir(tempFile), os.ModePerm)
+		r.NoError(t, err)
+
+		file, err := os.Create(tempFile)
+		r.NoError(t, err)
+		file.Close()
+	}
+
+	// Clean up temporary test files
+	defer func() {
+		for _, tempFile := range tempFiles {
+			err := os.RemoveAll(tempFile)
+			r.NoError(t, err)
+		}
+	}()
+
+	expectedPaths := []string{
+		filepath.Join(startPath, "file.txt"),
+		filepath.Join(startPath, "subdir1", "file.txt"),
+		filepath.Join(startPath, "subdir2", "file.txt"),
+	}
+
+	paths, err := generic.FileWalkByName(startPath, name)
+	r.NoError(t, err)
+	r.ElementsMatch(t, expectedPaths, paths)
+}
+
+func TestDelete(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "delete_test.txt")
+	r.NoError(t, err)
+	defer os.Remove(tempFile.Name())
+
+	data, err := generic.CSPRNG(256)
+	r.NoError(t, err)
+
+	_, err = tempFile.Write(data)
+	r.NoError(t, err)
+
+	err = tempFile.Close()
+	r.NoError(t, err)
+
 	err = generic.Delete(tempFile.Name(), 3)
 	r.NoError(t, err)
 
-	// Check if the file has been deleted
 	_, err = os.Stat(tempFile.Name())
-	if !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("expected file to be deleted, got error: %v", err)
-	}
+	r.True(t, os.IsNotExist(err))
 }
 
 func TestOverwrite(t *testing.T) {
-	// Create a temporary file for testing
-	tempFile, err := os.CreateTemp("", "testfile")
+	tempFile, err := os.CreateTemp("", "delete_test.txt")
 	r.NoError(t, err)
-
 	defer os.Remove(tempFile.Name())
 
-	// Write some data to the temporary file
-	data, err := generic.CSPRNG(32)
-	r.NoError(t, err)
-
-	expectedContents, err := generic.CSPRNG(32)
+	data, err := generic.CSPRNG(256)
 	r.NoError(t, err)
 
 	_, err = tempFile.Write(data)
 	r.NoError(t, err)
 
-	// Close the file before overwriting it
-	err = tempFile.Close()
+	cycle := 3
+
+	err = generic.Overwrite(tempFile.Name(), data, cycle)
 	r.NoError(t, err)
 
-	// Call the Overwrite function with the temporary file path
-	err = generic.Overwrite(tempFile.Name(), expectedContents, 10)
+	file, err := os.Open(tempFile.Name())
+	r.NoError(t, err)
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
 	r.NoError(t, err)
 
-	// Read the contents of the file
-	fileContents, err := generic.ReadFileContent(tempFile.Name())
+	readData := make([]byte, fileInfo.Size())
+	_, err = file.Read(readData)
 	r.NoError(t, err)
 
-	// Check if the file contents have been overwritten
-	if !bytes.Equal(fileContents, expectedContents) {
-		t.Errorf("expected file contents to be %q, got %q", expectedContents, fileContents)
-	}
+	r.Equal(t, data, readData)
 }

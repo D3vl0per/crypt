@@ -65,7 +65,9 @@ func TestArgon2ID(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			argonString, err := tt.argon.Hash(data)
 			r.NoError(t, err)
 
@@ -169,9 +171,11 @@ func TestArgon2IDWrongParameters(t *testing.T) {
 		},
 	}
 
+	argon := hasher.Argon2ID{}
 	for _, tt := range tests {
-		argon := hasher.Argon2ID{}
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			t.Log("Test name: ", tt.name)
 			t.Log("Argon string: ", tt.argonString)
 

@@ -72,6 +72,12 @@ func keychainInit(t *testing.T) chains {
 func TestGenKeypair(t *testing.T) {
 	_, err := aged.GenKeypair()
 	r.NoError(t, err)
+
+	sk, err := aged.GenSecretKey()
+	r.NoError(t, err)
+
+	isTrue := aged.CheckPrivateKeyFormat(sk)
+	r.True(t, isTrue)
 }
 
 func TestKeychain(t *testing.T) {
@@ -113,104 +119,82 @@ func TestRoundTrips(t *testing.T) {
 		{
 			name: "No compress, No obfuscator",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscation: false,
-				Compress:    false,
+				Data: config.plainData,
 			},
 		},
 		{
 			name: "No compress, obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscator:  &aged.AgeV1Obf{},
-				Obfuscation: true,
-				Compress:    false,
+				Data:       config.plainData,
+				Obfuscator: &aged.AgeV1Obf{},
 			},
 		},
 		{
 			name: "Compress with Gzip, no obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscation: false,
-				Compressor:  &compression.Gzip{},
-				Compress:    true,
+				Data:       config.plainData,
+				Compressor: &compression.Gzip{},
 			},
 		},
 		{
 			name: "Compress with Gzip, obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscator:  &aged.AgeV1Obf{},
-				Obfuscation: true,
-				Compressor:  &compression.Gzip{},
-				Compress:    true,
+				Data:       config.plainData,
+				Obfuscator: &aged.AgeV1Obf{},
+				Compressor: &compression.Gzip{},
 			},
 		},
 		{
 			name: "Compress with Zstd, no obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscation: false,
-				Compressor:  &compression.Zstd{},
-				Compress:    true,
+				Data:       config.plainData,
+				Compressor: &compression.Zstd{},
 			},
 		},
 		{
 			name: "Compress with Zstd, obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscator:  &aged.AgeV1Obf{},
-				Obfuscation: true,
-				Compressor:  &compression.Zstd{},
-				Compress:    true,
+				Data:       config.plainData,
+				Obfuscator: &aged.AgeV1Obf{},
+				Compressor: &compression.Zstd{},
 			},
 		},
 		{
 			name: "Compress with Flate, no obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscation: false,
-				Compressor:  &compression.Flate{},
-				Compress:    true,
+				Data:       config.plainData,
+				Compressor: &compression.Flate{},
 			},
 		},
 		{
 			name: "Compess with Flate, obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscator:  &aged.AgeV1Obf{},
-				Obfuscation: true,
-				Compressor:  &compression.Flate{},
-				Compress:    true,
+				Data:       config.plainData,
+				Obfuscator: &aged.AgeV1Obf{},
+				Compressor: &compression.Flate{},
 			},
 		},
 		{
 			name: "Compress with Zlib, no obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscation: false,
-				Compressor:  &compression.Zlib{},
-				Compress:    true,
+				Data:       config.plainData,
+				Compressor: &compression.Zlib{},
 			},
 		},
 		{
 			name: "Compress with Zlib, obfuscate",
 			parameter: aged.Parameters{
-				Data:        config.plainData,
-				Obfuscator:  &aged.AgeV1Obf{},
-				Obfuscation: true,
-				Compressor:  &compression.Zlib{},
-				Compress:    false,
+				Data:       config.plainData,
+				Obfuscator: &aged.AgeV1Obf{},
+				Compressor: &compression.Zlib{},
 			},
 		},
 		{
 			name: "Compress big file with Zstd, obfuscate",
 			parameter: aged.Parameters{
-				Data:        big,
-				Obfuscator:  &aged.AgeV1Obf{},
-				Obfuscation: true,
-				Compressor:  &compression.Zlib{},
-				Compress:    true,
+				Data:       big,
+				Obfuscator: &aged.AgeV1Obf{},
+				Compressor: &compression.Zlib{},
 			},
 		},
 	}
@@ -278,4 +262,23 @@ func TestWrongPublicKeyKeyringSetup(t *testing.T) {
 	_, err := aged.SetupKeychain(s)
 	r.Error(t, err)
 	t.Log(err.Error())
+}
+
+func TestKeypairFormatChecker(t *testing.T) {
+	identity, err := aged.GenKeypair()
+	r.NoError(t, err)
+
+	skIsValid := aged.CheckPrivateKeyFormat(identity.String())
+	t.Logf("Secret Key: %s", identity.String())
+	r.True(t, skIsValid)
+
+	pkIsValid := aged.CheckPublicKeyFormat(identity.Recipient().String())
+	t.Logf("Public Key: %s", identity.Recipient().String())
+	r.True(t, pkIsValid)
+
+	skIsNotValid := aged.CheckPrivateKeyFormat("correct horse battery staple")
+	r.False(t, skIsNotValid)
+
+	pkIsNotValid := aged.CheckPublicKeyFormat("correct horse battery staple")
+	r.False(t, pkIsNotValid)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 
 	"filippo.io/age"
 	"github.com/D3vl0per/crypt/compression"
@@ -59,12 +60,18 @@ func GenKeypair() (*age.X25519Identity, error) {
 	return identity, nil
 }
 
+func GenSecretKey() (string, error) {
+	identity, err := age.GenerateX25519Identity()
+	if err != nil {
+		return "", err
+	}
+	return identity.String(), nil
+}
+
 type Parameters struct {
-	Data        []byte
-	Compressor  compression.Compressor
-	Compress    bool
-	Obfuscation bool
-	Obfuscator  Obfuscation
+	Data       []byte
+	Compressor compression.Compressor
+	Obfuscator Obfuscation
 }
 
 func (k Keychain) Encrypt(p Parameters) ([]byte, error) {
@@ -123,10 +130,6 @@ func EncryptWithPwd(p Parameters, pwd string) ([]byte, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	if _, err := io.Copy(w, in); err != nil {
 		return nil, err
 	}
@@ -164,7 +167,7 @@ func DecryptWithPwd(p Parameters, pwd string) ([]byte, error) {
 func compressor(p Parameters) (*bytes.Reader, error) {
 	var in *bytes.Reader
 
-	if p.Compress {
+	if p.Compressor != nil {
 		var writer bytes.Buffer
 		compressorIn := bytes.NewReader(p.Data)
 
@@ -181,7 +184,7 @@ func compressor(p Parameters) (*bytes.Reader, error) {
 }
 
 func decompressor(p Parameters, data []byte) ([]byte, error) {
-	if p.Compress {
+	if p.Compressor != nil {
 		raw, err := p.Compressor.Decompress(data)
 		if err != nil {
 			return nil, err
@@ -192,7 +195,7 @@ func decompressor(p Parameters, data []byte) ([]byte, error) {
 }
 
 func obfuscator(p Parameters, in []byte) ([]byte, error) {
-	if p.Obfuscation {
+	if p.Obfuscator != nil {
 		obf, err := p.Obfuscator.Obfuscate(in)
 		if err != nil {
 			return nil, errors.New("failed to obfuscate header")
@@ -204,7 +207,7 @@ func obfuscator(p Parameters, in []byte) ([]byte, error) {
 
 func deobfuscator(p Parameters) ([]byte, error) {
 	var cipherData []byte
-	if p.Obfuscation {
+	if p.Obfuscator != nil {
 		var err error
 		cipherData, err = p.Obfuscator.Deobfuscate(p.Data)
 		if err != nil {
@@ -226,4 +229,15 @@ func (k Keychain) KeychainExport() []string {
 
 func (k Keychain) KeychainExportSecretKey() string {
 	return k.secretKey.String()
+}
+
+const AgePublicKeyPattern = "^age1[a-z0-9]{58}$"
+const AgePrivateKeyPattern = "^AGE-SECRET-KEY-1[A-Z0-9]{58}$"
+
+func CheckPublicKeyFormat(key string) bool {
+	return regexp.MustCompile(AgePublicKeyPattern).MatchString(key)
+}
+
+func CheckPrivateKeyFormat(key string) bool {
+	return regexp.MustCompile(AgePrivateKeyPattern).MatchString(key)
 }

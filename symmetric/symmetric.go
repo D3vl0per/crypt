@@ -30,12 +30,14 @@ type SymmetricStream interface {
 type XChaCha20 struct {
 	AdditionalData []byte
 }
-type (
-	Xor    struct{}
-	AesGCM struct {
-		AdditionalData []byte
-	}
-)
+type Xor struct {
+	// DisableRepeatingSequenceCheck disables the check for repeating sequences in the key.
+	DisableRepeatingSequenceCheck bool
+}
+
+type AesGCM struct {
+	AdditionalData []byte
+}
 
 type XChaCha20Stream struct {
 	Key  []byte
@@ -100,12 +102,12 @@ func (x *Xor) Encrypt(key, payload []byte) ([]byte, error) {
 		return nil, errors.New("insecure xor operation, key and payload length need to be equal")
 	}
 
+	if generic.IsRepeatingSequence(key) {
+		return nil, errors.New("insecure xor operation, key is a repeating sequence")
+	}
+
 	xored := make([]byte, len(payload))
 	subtle.XORBytes(xored, payload, key)
-
-	if generic.AllZero(xored) {
-		return nil, errors.New("xored array has just zeroes")
-	}
 
 	return xored, nil
 }

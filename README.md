@@ -18,6 +18,7 @@
         - Base64
         - Base32
         - Hex
+        - Custom option
     - Key Wrappers
         - ed25519
             - PKIX
@@ -38,9 +39,15 @@
     - ECDH
         - Curve25519
 - Hash
+    - Blake2s-128
+    - Blake2s-256
     - Blake2b-256
     - Blake2b-384
     - Blake2b-512
+    - SHA2-256
+    - SHA2-384
+    - SHA2-512
+    - SHA3-224
     - SHA3-256
     - SHA3-384
     - SHA3-512
@@ -48,8 +55,8 @@
     - SHAKE-256 (planned)
     - go_simhash (planned)
     - Argon2id
-    - Scrypt (planed)
-    - HKDF (planed)
+    - Scrypt (planned)
+    - HKDF (planned)
 - Compression
     - flate
     - gzip
@@ -62,6 +69,7 @@
 - Aged 
     - Age encryption suite
     - Age header obfuscation v1
+    - Age header obfuscation custom option
 
 ## Disclaimer
 
