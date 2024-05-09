@@ -1,11 +1,14 @@
 package asymmetric_test
 
 import (
+	"crypto"
+	"crypto/ed25519"
 	"encoding/hex"
 	"testing"
 
 	"github.com/D3vl0per/crypt/asymmetric"
 	"github.com/D3vl0per/crypt/generic"
+	"github.com/cloudflare/circl/sign/ed448"
 	a "github.com/stretchr/testify/assert"
 	r "github.com/stretchr/testify/require"
 )
@@ -53,88 +56,218 @@ func TestGenerateEd25519KeypairFromSeed(t *testing.T) {
 	r.Equal(t, asym2.GetPublicKey(), asym.GetPublicKey())
 }
 
-func TestE2EEEd25519SignVerify(t *testing.T) {
-	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
-
-	tests := []struct {
-		name      string
-		algorithm asymmetric.Signing
-	}{
-		{
-			name:      "Raw keys",
-			algorithm: &asymmetric.Ed25519{},
-		},
-		{
-			name: "Base64 encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.Base64{},
-			},
-		},
-		{
-			name: "UrlBase64 encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.URLBase64{},
-			},
-		},
-		{
-			name: "RawUrlBase64 encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.RawURLBase64{},
-			},
-		},
-		{
-			name: "RawBase64 encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.RawBase64{},
-			},
-		},
-		{
-			name: "Base32 encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.Base32{},
-			},
-		},
-		{
-			name: "PaddinglessBase32 encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.PaddinglessBase32{},
-			},
-		},
-		{
-			name: "Hex encoder",
-			algorithm: &asymmetric.Ed25519{
-				Encoder: &generic.Hex{},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.algorithm.Generate()
-			r.NoError(t, err)
-
-			signature := tt.algorithm.Sign(msg)
-			r.NotEmpty(t, signature)
-			t.Log("Signature:", signature)
-
-			isValid, err := tt.algorithm.Verify(msg, signature)
-			r.NoError(t, err)
-			r.True(t, isValid)
-		})
-	}
-}
-
 func TestWrongEd25519KGenerationFromSeeed(t *testing.T) {
 	asym := asymmetric.Ed25519{}
 	err := asym.GenerateFromSeed([]byte("wrong seed"))
 	r.EqualError(t, err, "seed size must be 32 bytes long")
 }
 
-func TestWrongCryptoToPublicKey(t *testing.T) {
+func TestWrongCryptoToKeys(t *testing.T) {
 	invalidKey := "not a public key"
+
+	algos := []asymmetric.Signing{
+		&asymmetric.Ed25519{},
+		&asymmetric.Ed448{},
+	}
+
+	for _, algo := range algos {
+		err := algo.CryptoToPublicKey(invalidKey)
+		r.ErrorIs(t, err, asymmetric.ErrPublicKeyAssert)
+
+		err = algo.CryptoToSecretKey(invalidKey)
+		r.ErrorIs(t, err, asymmetric.ErrSecretKeyAssert)
+
+		err = algo.Generate()
+		r.NoError(t, err)
+
+		sk := algo.GetSecretKey()
+		pk := algo.GetPublicKey()
+
+		switch algo {
+		case &asymmetric.Ed25519{}:
+			err = algo.CryptoToPublicKey(ed25519.PrivateKey(sk).Public())
+			r.NoError(t, err)
+			r.Equal(t, pk, algo.GetPublicKey())
+
+			err = algo.CryptoToSecretKey(crypto.PrivateKey(sk))
+			r.NoError(t, err)
+			r.Equal(t, pk, algo.GetSecretKey())
+
+		case &asymmetric.Ed448{}:
+			err = algo.CryptoToPublicKey(ed448.PrivateKey(sk).Public())
+			r.NoError(t, err)
+			r.Equal(t, pk, algo.GetPublicKey())
+
+			err = algo.CryptoToSecretKey(crypto.PrivateKey(sk))
+			r.NoError(t, err)
+			r.Equal(t, pk, algo.GetSecretKey())
+		}
+	}
+}
+
+func TestImportExport(t *testing.T) {
+
+	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+
+	tests := []struct {
+		name   string
+		algo   asymmetric.Signing
+		pkSize int
+		skSize int
+	}{
+		{
+			name:   "Ed25519",
+			algo:   &asymmetric.Ed25519{},
+			pkSize: ed25519.PublicKeySize,
+			skSize: ed25519.PrivateKeySize,
+		},
+		{
+			name:   "Ed448",
+			algo:   &asymmetric.Ed448{},
+			pkSize: ed448.PublicKeySize,
+			skSize: ed448.PrivateKeySize,
+		},
+	}
+
+	encoders := []generic.Encoder{
+		nil,
+		&generic.Base64{},
+		&generic.URLBase64{},
+		&generic.RawURLBase64{},
+		&generic.RawBase64{},
+		&generic.Base32{},
+		&generic.PaddinglessBase32{},
+		&generic.Hex{},
+	}
+
+	for _, test := range tests {
+		for _, encoder := range encoders {
+			testName := test.name
+			if encoder != nil {
+				testName = test.name + "/" + encoder.GetName()
+			}
+			t.Run(testName, func(t *testing.T) {
+				err := test.algo.Generate()
+				r.NoError(t, err)
+
+				test.algo.SetEncoder(encoder)
+
+				signature := test.algo.Sign(msg)
+				r.NotEmpty(t, signature)
+				t.Log("Signature:", signature)
+
+				isValid, err := test.algo.Verify(msg, signature)
+				r.NoError(t, err)
+				r.True(t, isValid)
+
+				r.Len(t, test.algo.GetSecretKey(), test.skSize)
+				r.Len(t, test.algo.GetPublicKey(), test.pkSize)
+
+				if test.algo.GetEncoder() == nil {
+
+					r.Equal(t, string(test.algo.GetSecretKey()), test.algo.GetSecretKeyString())
+					r.Equal(t, string(test.algo.GetPublicKey()), test.algo.GetPublicKeyString())
+					r.Len(t, test.algo.GetSecretKeyString(), test.skSize)
+					r.Len(t, test.algo.GetPublicKeyString(), test.pkSize)
+
+				} else {
+					encodedKey := test.algo.GetSecretKeyString()
+					decodedKey, err := encoder.Decode(encodedKey)
+					r.NoError(t, err)
+
+					r.NotEqual(t, string(test.algo.GetSecretKey()), encodedKey)
+
+					r.Equal(t, test.algo.GetSecretKey(), decodedKey)
+
+					encodedPkKey := test.algo.GetPublicKeyString()
+					decodedPkKey, err := encoder.Decode(encodedPkKey)
+					r.NoError(t, err)
+
+					r.NotEqual(t, string(test.algo.GetPublicKey()), encodedPkKey)
+
+					r.Equal(t, test.algo.GetPublicKey(), decodedPkKey)
+
+					signature := test.algo.Sign(msg)
+					r.NotEmpty(t, signature)
+					t.Log("Signature:", signature)
+
+					decodedSignature, err := encoder.Decode(signature)
+					r.NoError(t, err)
+
+					isValid, err := test.algo.Verify(msg, string(decodedSignature))
+					r.Error(t, err)
+					r.False(t, isValid)
+				}
+			})
+		}
+	}
+}
+
+func TestEd25519StringImport(t *testing.T) {
+	correctEcKey := asymmetric.Ed25519{}
+	err := correctEcKey.Generate()
+	r.NoError(t, err)
+
+	correctEcKeyring := asymmetric.Ed25519{}
+
+	err = correctEcKeyring.StringToSecretKey(correctEcKey.GetSecretKeyString())
+	r.NoError(t, err)
+
+	wrongEcKey, err := generic.CSPRNG(ed25519.PrivateKeySize)
+	r.NoError(t, err)
+
+	wrongEcKeyring := asymmetric.Ed25519{}
+
+	err = wrongEcKeyring.StringToSecretKey(string(wrongEcKey))
+	r.ErrorIs(t, err, asymmetric.ErrTestSigning)
+
+	publicKeyring := asymmetric.Ed25519{}
+
+	err = publicKeyring.StringToPublicKey(correctEcKey.GetPublicKeyString())
+	r.NoError(t, err)
+
+	r.Equal(t, correctEcKey.GetPublicKey(), publicKeyring.GetPublicKey())
+
+	// There is no way to check if the public key is wrong
+	wrongEcPkKey, err := generic.CSPRNG(ed25519.PublicKeySize)
+	r.NoError(t, err)
+
+	err = publicKeyring.StringToPublicKey(string(wrongEcPkKey))
+	r.NoError(t, err)
+
+	r.Equal(t, wrongEcPkKey, publicKeyring.GetPublicKey())
+}
+
+func TestEd25519Errors(t *testing.T) {
 	asym := asymmetric.Ed25519{}
-	_, err := asym.CryptoToPublicKey(invalidKey)
-	r.ErrorContains(t, err, "public key type")
+	wrongSk, err := generic.CSPRNG(ed25519.PrivateKeySize - 1)
+	r.NoError(t, err)
+	wrongPk, err := generic.CSPRNG(ed25519.PublicKeySize - 1)
+	r.NoError(t, err)
+
+	// Wrong secret key
+	err = asym.StringToSecretKey(string(wrongSk))
+	r.ErrorIs(t, err, asymmetric.ErrInvalidSecretKeySize)
+
+	// Wrong public key
+	err = asym.StringToPublicKey(string(wrongPk))
+	r.ErrorIs(t, err, asymmetric.ErrInvalidPublicKeySize)
+
+	asym2 := asymmetric.Ed25519{
+		Encoder: &generic.Hex{},
+	}
+
+	goodSkSize, err := generic.CSPRNG(ed25519.PrivateKeySize)
+	r.NoError(t, err)
+
+	goodPkSize, err := generic.CSPRNG(ed25519.PublicKeySize)
+	r.NoError(t, err)
+
+	err = asym2.StringToSecretKey(string(goodSkSize))
+	r.ErrorContains(t, err, "encoding")
+
+	err = asym2.StringToPublicKey(string(goodPkSize))
+	r.ErrorContains(t, err, "encoding")
 }
 
 func TestGenerateEd448Keypair(t *testing.T) {
@@ -149,77 +282,6 @@ func TestGenerateEd448Keypair(t *testing.T) {
 	t.Log("Ed448 Secret Key Hex:", hex.EncodeToString(asym.SecretKey))
 	t.Log("Ed448 Public Key:", asym.PublicKey)
 	t.Log("Ed448 Public Key Hex:", hex.EncodeToString(asym.PublicKey))
-}
-
-func TestE2EEEd448SignVerify(t *testing.T) {
-	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
-
-	tests := []struct {
-		name string
-		asym asymmetric.Ed448
-	}{
-		{
-			name: "Raw keys",
-		},
-		{
-			name: "Base64 encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.Base64{},
-			},
-		},
-		{
-			name: "UrlBase64 encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.URLBase64{},
-			},
-		},
-		{
-			name: "RawUrlBase64 encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.RawURLBase64{},
-			},
-		},
-		{
-			name: "RawBase64 encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.RawBase64{},
-			},
-		},
-		{
-			name: "Base32 encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.Base32{},
-			},
-		},
-		{
-			name: "PaddinglessBase32 encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.PaddinglessBase32{},
-			},
-		},
-		{
-			name: "Hex encoder",
-			asym: asymmetric.Ed448{
-				Encoder: &generic.Hex{},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.asym.Generate()
-			r.NoError(t, err)
-
-			signature := tt.asym.Sign(msg)
-			r.NotEmpty(t, signature)
-			t.Log("Signature:", signature)
-
-			isValid, err := tt.asym.Verify(msg, signature)
-			r.NoError(t, err)
-			r.True(t, isValid)
-			r.Equal(t, tt.asym.Encoder, tt.asym.GetEncoder())
-		})
-	}
 }
 
 // Deterministic generation check.
@@ -288,6 +350,73 @@ func TestWrongEd448KGenerationFromSeeed(t *testing.T) {
 func TestWrongEd448ToPublicKey(t *testing.T) {
 	invalidKey := "not a public key"
 	asym := asymmetric.Ed448{}
-	_, err := asym.CryptoToPublicKey(invalidKey)
+	err := asym.CryptoToPublicKey(invalidKey)
 	r.ErrorContains(t, err, "public key type")
+}
+
+func TestEd448StringImport(t *testing.T) {
+	correctEcKey := asymmetric.Ed448{}
+	err := correctEcKey.Generate()
+	r.NoError(t, err)
+
+	correctEcKeyring := asymmetric.Ed448{}
+
+	err = correctEcKeyring.StringToSecretKey(correctEcKey.GetSecretKeyString())
+	r.NoError(t, err)
+
+	wrongEcKey, err := generic.CSPRNG(ed448.PrivateKeySize)
+	r.NoError(t, err)
+
+	wrongEcKeyring := asymmetric.Ed448{}
+
+	err = wrongEcKeyring.StringToSecretKey(string(wrongEcKey))
+	r.ErrorIs(t, err, asymmetric.ErrTestSigning)
+
+	publicKeyring := asymmetric.Ed448{}
+
+	err = publicKeyring.StringToPublicKey(correctEcKey.GetPublicKeyString())
+	r.NoError(t, err)
+
+	r.Equal(t, correctEcKey.GetPublicKey(), publicKeyring.GetPublicKey())
+
+	// There is no way to check if the public key is wrong
+	wrongEcPkKey, err := generic.CSPRNG(ed448.PublicKeySize)
+	r.NoError(t, err)
+
+	err = publicKeyring.StringToPublicKey(string(wrongEcPkKey))
+	r.NoError(t, err)
+
+	r.Equal(t, wrongEcPkKey, publicKeyring.GetPublicKey())
+}
+
+func TestEd448Errors(t *testing.T) {
+	asym := asymmetric.Ed448{}
+	wrongSk, err := generic.CSPRNG(ed448.PrivateKeySize - 1)
+	r.NoError(t, err)
+	wrongPk, err := generic.CSPRNG(ed448.PublicKeySize - 1)
+	r.NoError(t, err)
+
+	// Wrong secret key
+	err = asym.StringToSecretKey(string(wrongSk))
+	r.ErrorIs(t, err, asymmetric.ErrInvalidSecretKeySize)
+
+	// Wrong public key
+	err = asym.StringToPublicKey(string(wrongPk))
+	r.ErrorIs(t, err, asymmetric.ErrInvalidPublicKeySize)
+
+	asym2 := asymmetric.Ed448{
+		Encoder: &generic.Hex{},
+	}
+
+	goodSkSize, err := generic.CSPRNG(ed448.PrivateKeySize)
+	r.NoError(t, err)
+
+	goodPkSize, err := generic.CSPRNG(ed448.PublicKeySize)
+	r.NoError(t, err)
+
+	err = asym2.StringToSecretKey(string(goodSkSize))
+	r.ErrorContains(t, err, "encoding")
+
+	err = asym2.StringToPublicKey(string(goodPkSize))
+	r.ErrorContains(t, err, "encoding")
 }

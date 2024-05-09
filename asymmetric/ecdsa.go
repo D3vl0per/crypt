@@ -11,6 +11,13 @@ import (
 	"github.com/cloudflare/circl/sign/ed448"
 )
 
+var testSignData = []byte("shibboleet")
+var ErrTestSigning = errors.New("test signing failed, incorrect private key")
+var ErrPublicKeyAssert = errors.New("public key type assertion error")
+var ErrSecretKeyAssert = errors.New("secret key type assertion error")
+var ErrInvalidPublicKeySize = errors.New("invalid public key size")
+var ErrInvalidSecretKeySize = errors.New("invalid secret key size")
+
 ///
 /// Ed25519 Suite
 ///
@@ -21,12 +28,15 @@ type Signing interface {
 	Sign([]byte) string
 	Verify([]byte, string) (bool, error)
 	GetSecretKey() []byte
+	GetSecretKeyString() string
 	GetPublicKey() []byte
+	GetPublicKeyString() string
 	GetEncoder() generic.Encoder
-	CryptoToPublicKey(crypto.PublicKey) (ed25519.PublicKey, error)
-	PrivateToPublic(ed25519.PrivateKey) (ed25519.PublicKey, error)
-	ImportSecretKey([]byte) error
-	ImportPublicKey([]byte) error
+	SetEncoder(generic.Encoder)
+	CryptoToPublicKey(crypto.PublicKey) error
+	CryptoToSecretKey(crypto.PrivateKey) error
+	StringToPublicKey(string) error
+	StringToSecretKey(string) error
 }
 
 type Ed25519 struct {
@@ -55,10 +65,8 @@ func (e *Ed25519) GenerateFromSeed(seed []byte) error {
 	if l := len(seed); l != ed25519.SeedSize {
 		return errors.New(generic.StrCnct([]string{"seed size must be ", strconv.Itoa(ed25519.SeedSize), " bytes long"}...))
 	}
-	var err error
 	e.SecretKey = ed25519.NewKeyFromSeed(seed)
-	e.PublicKey, err = e.CryptoToPublicKey(e.SecretKey.Public())
-	return err
+	return e.CryptoToPublicKey(e.SecretKey.Public())
 }
 
 func (e *Ed25519) Sign(msg []byte) string {
@@ -85,44 +93,102 @@ func (e *Ed25519) GetSecretKey() []byte {
 	return e.SecretKey
 }
 
+func (e *Ed25519) GetSecretKeyString() string {
+	if e.Encoder == nil {
+		return string(e.SecretKey)
+	}
+
+	return e.Encoder.Encode(e.SecretKey)
+}
+
 func (e *Ed25519) GetPublicKey() []byte {
 	return e.PublicKey
+}
+
+func (e *Ed25519) GetPublicKeyString() string {
+	if e.Encoder == nil {
+		return string(e.PublicKey)
+	}
+
+	return e.Encoder.Encode(e.PublicKey)
 }
 
 func (e *Ed25519) GetEncoder() generic.Encoder {
 	return e.Encoder
 }
 
-func (*Ed25519) CryptoToPublicKey(pub crypto.PublicKey) (ed25519.PublicKey, error) {
+func (e *Ed25519) SetEncoder(encoder generic.Encoder) {
+	e.Encoder = encoder
+}
+
+func (e *Ed25519) CryptoToPublicKey(pub crypto.PublicKey) error {
 	switch pub := pub.(type) {
 	case ed25519.PublicKey:
-		return pub, nil
+		e.PublicKey = pub
+		return nil
 	default:
-		return nil, errors.New("public key type")
+		return ErrPublicKeyAssert
 	}
 }
 
-func (*Ed25519) PrivateToPublic(priv ed25519.PrivateKey) (ed25519.PublicKey, error) {
-	pk, ok := priv.Public().(ed25519.PublicKey)
-	if !ok {
-		return ed25519.PublicKey{}, errors.New("type assertion error")
+func (e *Ed25519) CryptoToSecretKey(sec crypto.PrivateKey) error {
+	switch sec := sec.(type) {
+	case ed25519.PrivateKey:
+		e.SecretKey = sec
+		return nil
+	default:
+		return ErrSecretKeyAssert
 	}
-	return pk, nil
 }
 
-func (e *Ed25519) ImportSecretKey(key []byte) error {
-	if l := len(key); l != ed25519.PrivateKeySize {
-		return errors.New(generic.StrCnct([]string{"key size must be ", strconv.Itoa(ed25519.PrivateKeySize), " bytes long"}...))
+func (e *Ed25519) StringToPublicKey(public string) (err error) {
+	var pubRaw []byte
+	if e.Encoder != nil {
+		pubRaw, err = e.Encoder.Decode(public)
+		if err != nil {
+			return err
+		}
+	} else {
+		pubRaw = []byte(public)
 	}
-	e.SecretKey = key
+
+	if len(pubRaw) != ed25519.PublicKeySize {
+		return ErrInvalidPublicKeySize
+	}
+
+	e.PublicKey = ed25519.PublicKey(pubRaw)
+
 	return nil
 }
 
-func (e *Ed25519) ImportPublicKey(key []byte) error {
-	if l := len(key); l != ed25519.PublicKeySize {
-		return errors.New(generic.StrCnct([]string{"key size must be ", strconv.Itoa(ed25519.PublicKeySize), " bytes long"}...))
+func (e *Ed25519) StringToSecretKey(secret string) (err error) {
+	var secRaw []byte
+	if e.Encoder != nil {
+		secRaw, err = e.Encoder.Decode(secret)
+		if err != nil {
+			return err
+		}
+	} else {
+		secRaw = []byte(secret)
 	}
-	e.PublicKey = key
+
+	if len(secRaw) != ed25519.PrivateKeySize {
+		return ErrInvalidSecretKeySize
+	}
+
+	e.SecretKey = ed25519.PrivateKey(secRaw)
+
+	pub, ok := e.SecretKey.Public().(ed25519.PublicKey)
+	if !ok {
+		return ErrPublicKeyAssert
+	}
+	e.PublicKey = pub
+
+	sig := ed25519.Sign(e.SecretKey, testSignData)
+	valid := ed25519.Verify(e.PublicKey, testSignData, sig)
+	if !valid {
+		return ErrTestSigning
+	}
 	return nil
 }
 
@@ -143,10 +209,9 @@ func (e *Ed448) GenerateFromSeed(seed []byte) error {
 	if l := len(seed); l != ed448.SeedSize {
 		return errors.New(generic.StrCnct([]string{"seed size must be ", strconv.Itoa(ed448.SeedSize), " bytes long"}...))
 	}
-	var err error
+
 	e.SecretKey = ed448.NewKeyFromSeed(seed)
-	e.PublicKey, err = e.CryptoToPublicKey(e.SecretKey.Public())
-	return err
+	return e.CryptoToPublicKey(e.SecretKey.Public())
 }
 
 func (e *Ed448) Sign(msg []byte) string {
@@ -176,23 +241,97 @@ func (e *Ed448) GetPublicKey() []byte {
 	return e.PublicKey
 }
 
+func (e *Ed448) GetPublicKeyString() string {
+	if e.Encoder == nil {
+		return string(e.PublicKey)
+	}
+
+	return e.Encoder.Encode(e.PublicKey)
+}
+
+func (e *Ed448) GetSecretKeyString() string {
+	if e.Encoder == nil {
+		return string(e.SecretKey)
+	}
+
+	return e.Encoder.Encode(e.SecretKey)
+}
+
 func (e *Ed448) GetEncoder() generic.Encoder {
 	return e.Encoder
 }
 
-func (*Ed448) CryptoToPublicKey(pub crypto.PublicKey) (ed448.PublicKey, error) {
+func (e *Ed448) SetEncoder(encoder generic.Encoder) {
+	e.Encoder = encoder
+}
+
+func (e *Ed448) CryptoToPublicKey(pub crypto.PublicKey) error {
 	switch pub := pub.(type) {
 	case ed448.PublicKey:
-		return pub, nil
+		e.PublicKey = pub
+		return nil
 	default:
-		return nil, errors.New("public key type")
+		return ErrPublicKeyAssert
 	}
 }
 
-func (*Ed448) PrivateToPublic(priv ed448.PrivateKey) (ed448.PublicKey, error) {
-	pk, ok := priv.Public().(ed448.PublicKey)
-	if !ok {
-		return ed448.PublicKey{}, errors.New("type assertion error")
+func (e *Ed448) CryptoToSecretKey(sec crypto.PrivateKey) error {
+	switch sec := sec.(type) {
+	case ed448.PrivateKey:
+		e.SecretKey = sec
+		return nil
+	default:
+		return ErrSecretKeyAssert
 	}
-	return pk, nil
+}
+
+func (e *Ed448) StringToPublicKey(public string) (err error) {
+	var pubRaw []byte
+	if e.Encoder != nil {
+		pubRaw, err = e.Encoder.Decode(public)
+		if err != nil {
+			return err
+		}
+	} else {
+		pubRaw = []byte(public)
+	}
+
+	if len(pubRaw) != ed448.PublicKeySize {
+		return ErrInvalidPublicKeySize
+	}
+
+	e.PublicKey = ed448.PublicKey(pubRaw)
+
+	return nil
+}
+
+func (e *Ed448) StringToSecretKey(secret string) (err error) {
+	var secRaw []byte
+	if e.Encoder != nil {
+		secRaw, err = e.Encoder.Decode(secret)
+		if err != nil {
+			return err
+		}
+	} else {
+		secRaw = []byte(secret)
+	}
+
+	if len(secRaw) != ed448.PrivateKeySize {
+		return ErrInvalidSecretKeySize
+	}
+
+	e.SecretKey = ed448.PrivateKey(secRaw)
+
+	pub, ok := e.SecretKey.Public().(ed448.PublicKey)
+	if !ok {
+		return ErrPublicKeyAssert
+	}
+	e.PublicKey = pub
+
+	sig := ed448.Sign(e.SecretKey, testSignData, e.Context)
+	valid := ed448.Verify(e.PublicKey, testSignData, sig, e.Context)
+	if !valid {
+		return ErrTestSigning
+	}
+	return nil
 }
