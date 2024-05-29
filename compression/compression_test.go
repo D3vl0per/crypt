@@ -11,45 +11,14 @@ import (
 	r "github.com/stretchr/testify/require"
 )
 
-type compressor struct {
-	name       string
-	compressor compression.Compressor
-	modes      []int
-}
-
-func compressionArlgorithms() []compressor {
-	genericModes := []int{compression.BestCompression, compression.BestSpeed, compression.NoCompression, compression.DefaultCompression, compression.HuffmanOnly}
-	zstdModes := []int{compression.ZstdSpeedBestCompression, compression.ZstdSpeedBetterCompression, compression.ZstdSpeedDefault, compression.ZstdSpeedFastest}
-	brotliModes := []int{compression.BrotliBestCompression, compression.BrotliDefaultCompression, compression.BrotliBestSpeed}
-
-	compressors := []compressor{
-		{
-			name:       "zlib",
-			compressor: &compression.Zlib{},
-			modes:      genericModes,
-		},
-		{
-			name:       "gzip",
-			compressor: &compression.Gzip{},
-			modes:      genericModes,
-		},
-		{
-			name:       "zstd",
-			compressor: &compression.Zstd{},
-			modes:      zstdModes,
-		},
-		{
-			name:       "generic",
-			compressor: &compression.Flate{},
-			modes:      genericModes,
-		},
-		{
-			name:       "brotli",
-			compressor: &compression.Brotli{},
-			modes:      brotliModes,
-		},
+func compressors() []compression.Compressor {
+	return []compression.Compressor{
+		&compression.Zlib{},
+		&compression.Gzip{},
+		&compression.Zstd{},
+		&compression.Flate{},
+		&compression.Brotli{},
 	}
-	return compressors
 }
 
 type compressionSample struct {
@@ -93,16 +62,16 @@ func compressionSamples() []compressionSample {
 }
 
 func BenchmarkRoundTrip(b *testing.B) {
-	compressors := compressionArlgorithms()
+	compressors := compressors()
 	compressionSamples := compressionSamples()
 
 	for _, compressor := range compressors {
-		for _, mode := range compressor.modes {
-			compressor.compressor.SetLevel(mode)
+		for _, mode := range compressor.GetModes() {
+			compressor.SetLevel(mode)
 			for _, sample := range compressionSamples {
-				b.Run(compressor.name+"-"+strconv.Itoa(mode)+"-"+sample.name, func(b *testing.B) {
+				b.Run(compressor.GetName()+"/"+strconv.Itoa(mode)+"/"+sample.name, func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
-						benchmarkRoundTrip(b, compressor.compressor, sample.data)
+						benchmarkRoundTrip(b, compressor, sample.data)
 					}
 				})
 			}
@@ -138,18 +107,35 @@ func benchmarkRoundTrip(b *testing.B, compressor compression.Compressor, data []
 }
 
 func TestRoundTrips(t *testing.T) {
-	compressors := compressionArlgorithms()
+	compressors := compressors()
 	compressionSamples := compressionSamples()
 
 	for _, compressor := range compressors {
-		for _, mode := range compressor.modes {
-			compressor.compressor.SetLevel(mode)
+		for _, mode := range compressor.GetModes() {
+			compressor.SetLevel(mode)
 			for _, sample := range compressionSamples {
-				t.Run(compressor.name+"-"+strconv.Itoa(mode)+"-"+sample.name, func(t *testing.T) {
-					testRoundTrip(t, compressor.compressor, sample.data)
+				t.Run(compressor.GetName()+"/"+strconv.Itoa(mode)+"/"+sample.name, func(t *testing.T) {
+					testRoundTrip(t, compressor, sample.data)
 				})
 			}
 		}
+	}
+}
+
+func TestInterfacelessRoundTrip(t *testing.T) {
+	compressors := []compression.Compressor{
+		&compression.Zlib{Level: compression.DefaultCompression},
+		&compression.Gzip{Level: compression.DefaultCompression},
+		&compression.Zstd{Level: compression.ZstdSpeedDefault},
+		&compression.Flate{Level: compression.DefaultCompression},
+		&compression.Brotli{Level: compression.BrotliDefaultCompression},
+	}
+	samples := compressionSamples()
+
+	for _, compressor := range compressors {
+		t.Run(compressor.GetName(), func(t *testing.T) {
+			testRoundTrip(t, compressor, samples[0].data)
+		})
 	}
 }
 
@@ -166,11 +152,11 @@ func testRoundTrip(t *testing.T, compressor compression.Compressor, data []byte)
 
 	r.Equal(t, compressed, compressedBuff.Bytes())
 
-	t.Log("Compressor name: ", compressor.GetName())
-	t.Log("Data sample: ", data[:16])
-	t.Log("Orignal size: ", len(data))
-	t.Log("Compressed size: ", compressedBuff.Len())
-	t.Log("Compression mode: ", compressor.GetLevel())
+	t.Log("Compressor name:", compressor.GetName())
+	t.Log("Data sample:", data[:16])
+	t.Log("Orignal size:", len(data))
+	t.Log("Compressed size:", compressedBuff.Len())
+	t.Log("Compression mode:", compressor.GetLevel())
 	t.Log("---")
 	compressedReader := bytes.NewReader(compressedBuff.Bytes())
 
@@ -325,4 +311,29 @@ func TestZstdWrongDecompressData(t *testing.T) {
 
 	err = compressor.DecompressStream(reader, &compressedBuff)
 	r.Error(t, err)
+}
+
+func TestMissingCompressLevels(t *testing.T) {
+	compressors := []compression.Compressor{
+		&compression.Zstd{},
+	}
+	samples := compressionSamples()
+
+	for _, compressor := range compressors {
+		t.Run(compressor.GetName(), func(t *testing.T) {
+
+			out, err := compressor.Compress(samples[0].data)
+			r.ErrorIs(t, err, compression.ErrMissingCompressionLevel)
+			r.Nil(t, out)
+		})
+
+		t.Run("streaming/"+compressor.GetName(), func(t *testing.T) {
+			var out bytes.Buffer
+			reader := bytes.NewReader(samples[0].data)
+
+			err := compressor.CompressStream(reader, &out)
+			r.ErrorIs(t, err, compression.ErrMissingCompressionLevel)
+			r.Nil(t, out.Bytes())
+		})
+	}
 }
