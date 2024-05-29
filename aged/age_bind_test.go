@@ -148,7 +148,7 @@ func TestRoundTrips(t *testing.T) {
 			name: "Compress with Zstd, no obfuscate",
 			parameter: aged.Parameters{
 				Data:       config.plainData,
-				Compressor: &compression.Zstd{},
+				Compressor: &compression.Zstd{Level: compression.ZstdSpeedDefault},
 			},
 		},
 		{
@@ -156,7 +156,7 @@ func TestRoundTrips(t *testing.T) {
 			parameter: aged.Parameters{
 				Data:       config.plainData,
 				Obfuscator: &aged.AgeV1Obf{},
-				Compressor: &compression.Zstd{},
+				Compressor: &compression.Zstd{Level: compression.ZstdSpeedDefault},
 			},
 		},
 		{
