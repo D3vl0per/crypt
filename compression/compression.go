@@ -2,6 +2,7 @@ package compression
 
 import (
 	"bytes"
+	"errors"
 	"io"
 
 	"github.com/andybalholm/brotli"
@@ -46,6 +47,8 @@ const (
 	BrotliDefaultCompression int = 6
 	BrotliBestSpeed          int = 0
 )
+
+var ErrMissingCompressionLevel = errors.New("missing compression level parameter")
 
 type Compressor interface {
 	Compress([]byte) ([]byte, error)
@@ -156,6 +159,10 @@ func (z *Zstd) Compress(in []byte) ([]byte, error) {
 }
 
 func (z *Zstd) CompressStream(in io.Reader, out io.Writer) error {
+	if z.Level == 0 {
+		return ErrMissingCompressionLevel
+	}
+
 	enc, err := zstd.NewWriter(out, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(z.Level)))
 	if err != nil {
 		return err
@@ -282,7 +289,6 @@ func (f *Flate) GetModes() []int {
 		DefaultCompression,
 		BestCompression,
 		HuffmanOnly,
-		StatelessCompression,
 	}
 }
 
@@ -360,7 +366,6 @@ func (zl *Zlib) GetModes() []int {
 		DefaultCompression,
 		BestCompression,
 		HuffmanOnly,
-		StatelessCompression,
 	}
 }
 
@@ -385,6 +390,10 @@ func (b *Brotli) Compress(in []byte) ([]byte, error) {
 }
 
 func (b *Brotli) CompressStream(in io.Reader, out io.Writer) error {
+	if b.bw == nil {
+		b.bw = brotli.NewWriterLevel(nil, b.Level)
+	}
+
 	b.bw.Reset(out)
 	_, err := io.Copy(b.bw, in)
 	if err != nil {
@@ -411,6 +420,10 @@ func (b *Brotli) Decompress(in []byte) ([]byte, error) {
 }
 
 func (b *Brotli) DecompressStream(in io.Reader, out io.Writer) error {
+	if b.br == nil {
+		b.br = brotli.NewReader(nil)
+	}
+
 	if err := b.br.Reset(in); err != nil {
 		return err
 	}
