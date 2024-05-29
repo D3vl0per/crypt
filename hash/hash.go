@@ -15,6 +15,7 @@ import (
 
 var ErrHmacSecretNil = errors.New("HMAC secret is nil")
 var ErrBlake2s128Key = errors.New("blake2s: a key is required for a 128-bit hash")
+var ErrHmacIsNotSupported = errors.New("HMAC is not supported for this algorithm")
 
 type Algorithms interface {
 	Hash(plaintext []byte) ([]byte, error)
@@ -83,6 +84,14 @@ type Shake128 struct {
 }
 type Shake256 struct {
 	HmacSecret []byte
+	Encoder    generic.Encoder
+}
+
+type NewLegacyKeccak256 struct {
+	Encoder    generic.Encoder
+}
+
+type NewLegacyKeccak512 struct {
 	Encoder    generic.Encoder
 }
 
@@ -917,6 +926,104 @@ func (s *Sha3512) GetEncoder() generic.Encoder {
 		return nil
 	}
 	return s.Encoder
+}
+
+///
+/// NewLegacyKeccak256
+///
+
+func (n *NewLegacyKeccak256) Hash(plaintext []byte) ([]byte, error) {
+	hash, err := hashNewLegacyKeccak256(plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(n.Encoder, hash), nil
+}
+
+func (n *NewLegacyKeccak256) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
+	hashed, err := hashNewLegacyKeccak256(plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func (n *NewLegacyKeccak256) Hmac(plaintext []byte) ([]byte, error) {
+	return nil, ErrHmacIsNotSupported
+}
+
+func (n *NewLegacyKeccak256) ValidateHmac(plaintext, expectedHash []byte) (bool, error) {
+	return false, ErrHmacIsNotSupported
+}
+
+func hashNewLegacyKeccak256(plaintext []byte) ([]byte, error) {
+	hash := sha3.NewLegacyKeccak256()
+	if _, err := hash.Write(plaintext); err != nil {
+		return nil, err
+	}
+
+	return hash.Sum(nil), nil
+}
+
+func (n *NewLegacyKeccak256) SetEncoder(encoder generic.Encoder) {
+	n.Encoder = encoder
+}
+
+func (n *NewLegacyKeccak256) GetEncoder() generic.Encoder {
+	if n.Encoder == nil {
+		return nil
+	}
+	return n.Encoder
+}
+
+///
+/// NewLegacyKeccak512
+///
+
+func (n *NewLegacyKeccak512) Hash(plaintext []byte) ([]byte, error) {
+	hash, err := hashNewLegacyKeccak512(plaintext)
+	if err != nil {
+		return nil, err
+	}
+	return encoder(n.Encoder, hash), nil
+}
+
+func (n *NewLegacyKeccak512) ValidateHash(plaintext, expectedHash []byte) (bool, error) {
+	hashed, err := hashNewLegacyKeccak512(plaintext)
+	if err != nil {
+		return false, err
+	}
+
+	return generic.Compare(hashed, expectedHash), nil
+}
+
+func (n *NewLegacyKeccak512) Hmac(plaintext []byte) ([]byte, error) {
+	return nil, ErrHmacIsNotSupported
+}
+
+func (n *NewLegacyKeccak512) ValidateHmac(plaintext, expectedHash []byte) (bool, error) {
+	return false, ErrHmacIsNotSupported
+}
+
+func hashNewLegacyKeccak512(plaintext []byte) ([]byte, error) {
+	hash := sha3.NewLegacyKeccak512()
+	if _, err := hash.Write(plaintext); err != nil {
+		return nil, err
+	}
+
+	return hash.Sum(nil), nil
+}
+
+func (n *NewLegacyKeccak512) SetEncoder(encoder generic.Encoder) {
+	n.Encoder = encoder
+}
+
+func (n *NewLegacyKeccak512) GetEncoder() generic.Encoder {
+	if n.Encoder == nil {
+		return nil
+	}
+	return n.Encoder
 }
 
 /// utils

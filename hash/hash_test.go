@@ -229,6 +229,20 @@ func TestE2EEHash(t *testing.T) {
 			//nolint:lll
 			expected: []byte{62, 90, 106, 154, 156, 175, 100, 184, 63, 15, 68, 163, 213, 182, 24, 243, 36, 68, 68, 37, 103, 225, 4, 104, 209, 65, 10, 211, 59, 49, 142, 76, 158, 209, 197, 144, 65, 227, 33, 54, 201, 149, 142, 218, 4, 93, 7, 57, 232, 25, 39, 234, 202, 216, 103, 197, 113, 123, 113, 85, 208, 28, 237, 36},
 		},
+		{
+			name: "Keccak-256",
+			algo: &hasher.NewLegacyKeccak256{},
+			data: data,
+			//nolint:lll
+			expected: []byte{37, 215, 211, 209, 110, 60, 70, 74, 213, 160, 52, 165, 229, 85, 223, 120, 27, 220, 108, 45, 118, 134, 146, 214, 44, 165, 33, 167, 60, 73, 180, 81},
+		},
+		{
+			name: "Keccak-512",
+			algo: &hasher.NewLegacyKeccak512{},
+			data: data,
+			//nolint:lll
+			expected: []byte{84, 132, 62, 233, 6, 185, 221, 191, 149, 86, 16, 66, 56, 234, 18, 175, 12, 76, 53, 175, 195, 148, 157, 10, 25, 133, 130, 216, 107, 161, 27, 127, 178, 240, 117, 12, 177, 50, 113, 186, 59, 74, 8, 98, 83, 225, 178, 19, 44, 195, 116, 224, 199, 77, 33, 25, 36, 212, 69, 44, 70, 142, 75, 184},
+		},
 	}
 
 	for _, test := range tests {
@@ -367,6 +381,18 @@ func TestHashErrors(t *testing.T) {
 			algo: &hasher.Sha3512{},
 			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
 			err:  hasher.ErrHmacSecretNil,
+		},
+		{
+			name: "Keccak-256 HMAC",
+			algo: &hasher.NewLegacyKeccak256{},
+			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
+			err:  hasher.ErrHmacIsNotSupported,
+		},
+		{
+			name: "Keccak-512 HMAC",
+			algo: &hasher.NewLegacyKeccak512{},
+			data: []byte("aing7jei3eebeaMohjeesheeph0ichaiXual4vah1Eeg3eikai7aichoeliej1da"),
+			err:  hasher.ErrHmacIsNotSupported,
 		},
 	}
 
