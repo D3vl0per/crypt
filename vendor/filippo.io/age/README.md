@@ -1,4 +1,10 @@
-<p align="center"><img alt="The age logo, an wireframe of St. Peters dome in Rome, with the text: age, file encryption" width="600" src="https://user-images.githubusercontent.com/1225294/132245842-fda4da6a-1cea-4738-a3da-2dc860861c98.png"></p>
+<p align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="https://github.com/FiloSottile/age/blob/main/logo/logo_white.svg">
+        <source media="(prefers-color-scheme: light)" srcset="https://github.com/FiloSottile/age/blob/main/logo/logo.svg">
+        <img alt="The age logo, a wireframe of St. Peters dome in Rome, with the text: age, file encryption" width="600" src="https://github.com/FiloSottile/age/blob/main/logo/logo.svg">
+    </picture>
+</p>
 
 [![Go Reference](https://pkg.go.dev/badge/filippo.io/age.svg)](https://pkg.go.dev/filippo.io/age)
 [![man page](<https://img.shields.io/badge/age(1)-man%20page-lightgrey>)](https://filippo.io/age/age.1)
@@ -23,7 +29,9 @@ $ age --decrypt -i key.txt data.tar.gz.age > data.tar.gz
 
 🔑 Hardware PIV tokens such as YubiKeys are supported through the [age-plugin-yubikey](https://github.com/str4d/age-plugin-yubikey) plugin.
 
-💬 The author pronounces it `[aɡe̞]`, like the Italian [“aghe”](https://translate.google.com/?sl=it&text=aghe).
+✨ For more plugins, implementations, tools, and integrations, check out the [awesome age](https://github.com/FiloSottile/awesome-age) list.
+
+💬 The author pronounces it `[aɡe̞]` [with a hard *g*](https://translate.google.com/?sl=it&text=aghe), like GIF, and is always spelled lowercase.
 
 ## Installation
 
@@ -53,7 +61,13 @@ $ age --decrypt -i key.txt data.tar.gz.age > data.tar.gz
         </td>
     </tr>
     <tr>
-        <td>Debian 11+ (Bullseye)</td>
+        <td>Debian 12+ (Bookworm)</td>
+        <td>
+            <code>apt install age</code>
+        </td>
+    </tr>
+    <tr>
+        <td>Debian 11 (Bullseye)</td>
         <td>
             <code>apt install age/bullseye-backports</code>
             (<a href="https://backports.debian.org/Instructions/#index2h2">enable backports</a> for age v1.0.0+)
@@ -116,7 +130,13 @@ $ age --decrypt -i key.txt data.tar.gz.age > data.tar.gz
     <tr>
         <td>Scoop (Windows)</td>
         <td>
-            <code>scoop bucket add extras; scoop install age</code>
+            <code>scoop bucket add extras && scoop install age</code>
+        </td>
+    </tr>
+    <tr>
+        <td>pkgx</td>
+        <td>
+            <code>pkgx install age</code>
         </td>
     </tr>
 </table>
@@ -125,7 +145,7 @@ On Windows, Linux, macOS, and FreeBSD you can use the pre-built binaries.
 
 ```
 https://dl.filippo.io/age/latest?for=linux/amd64
-https://dl.filippo.io/age/v1.0.0-rc.1?for=darwin/arm64
+https://dl.filippo.io/age/v1.1.1?for=darwin/arm64
 ...
 ```
 
