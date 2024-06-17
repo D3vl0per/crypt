@@ -8,7 +8,7 @@ filippo.io/age/internal/stream
 ## explicit; go 1.13
 github.com/andybalholm/brotli
 github.com/andybalholm/brotli/matchfinder
-# github.com/cloudflare/circl v1.3.8
+# github.com/cloudflare/circl v1.3.9
 ## explicit; go 1.21
 github.com/cloudflare/circl/ecc/goldilocks
 github.com/cloudflare/circl/internal/conv
