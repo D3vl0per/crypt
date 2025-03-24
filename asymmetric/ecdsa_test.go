@@ -110,8 +110,8 @@ func TestImportExport(t *testing.T) {
 	msg := []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 	tests := []struct {
-		name   string
 		algo   asymmetric.Signing
+		name   string
 		pkSize int
 		skSize int
 	}{

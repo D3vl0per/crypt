@@ -46,8 +46,8 @@ func TestAllZero(t *testing.T) {
 func TestStrCnct(t *testing.T) {
 	tests := []struct {
 		name string
-		str  []string
 		want string
+		str  []string
 	}{
 		{
 			name: "Empty strings",

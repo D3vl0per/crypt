@@ -26,64 +26,64 @@ type Algorithms interface {
 }
 
 type Blake2b256 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Blake2b384 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Blake2b512 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 
 type Blake2s128 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Blake2s256 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 
 type Sha2256 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Sha2384 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Sha2512 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 
 type Sha3224 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Sha3256 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Sha3384 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Sha3512 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 
 type Shake128 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 type Shake256 struct {
-	HmacSecret []byte
 	Encoder    generic.Encoder
+	HmacSecret []byte
 }
 
 ///

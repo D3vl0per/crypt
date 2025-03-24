@@ -115,13 +115,13 @@ func TestFaultMinimalisticAttestation(t *testing.T) {
 	// r.NoError(t, err)
 
 	tests := []struct {
-		name                string
 		attestator          asymmetric.Minimalistic
-		payload             []byte
+		name                string
 		expectedSignError   string
 		expectedVerifyError string
 		expectedParseError  string
 		token               string
+		payload             []byte
 	}{
 		{
 			name: "Sign Missing Suite",

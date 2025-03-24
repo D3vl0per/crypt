@@ -26,10 +26,10 @@ type Kdf interface {
 }
 
 type Hkdf struct {
+	Encoder  generic.Hex
+	HashMode func() hash.Hash
 	Salt     []byte
 	Key      []byte
-	HashMode func() hash.Hash
-	Encoder  generic.Hex
 }
 
 type Argon2ID struct {
@@ -42,10 +42,10 @@ type Argon2ID struct {
 
 type argonOutput struct {
 	ArgonString string
-	Hash        []byte
 	HashBase64  string
-	Salt        []byte
 	SaltBase64  string
+	Hash        []byte
+	Salt        []byte
 }
 
 func (a *Argon2ID) argon2ID(data []byte) argonOutput {
@@ -126,11 +126,11 @@ func (a *Argon2ID) Validate(data []byte, argonString string) (bool, error) {
 type Parameters struct {
 	Algorithm   string
 	Version     string
+	Salt        []byte
+	Hash        []byte
 	Memory      uint32
 	Iterations  uint32
 	Parallelism uint8
-	Salt        []byte
-	Hash        []byte
 }
 
 func (a *Argon2ID) ExtractParameters(input string) (Parameters, error) {

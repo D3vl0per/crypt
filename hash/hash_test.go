@@ -285,10 +285,10 @@ func decoder(algo hasher.Algorithms, hashed []byte) ([]byte, error) {
 
 func TestHashErrors(t *testing.T) {
 	tests := []struct {
-		name string
 		algo hasher.Algorithms
-		data []byte
 		err  error
+		name string
+		data []byte
 	}{
 		{
 			name: "Blake2b256 HMAC",
