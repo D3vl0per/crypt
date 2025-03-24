@@ -51,9 +51,9 @@ func TestE2E(t *testing.T) {
 func TestE2EFault(t *testing.T) {
 	type cases struct {
 		name        string
+		expectedErr string
 		key         []byte
 		payload     []byte
-		expectedErr string
 	}
 
 	type testStructue struct {

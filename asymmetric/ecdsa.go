@@ -40,15 +40,15 @@ type Signing interface {
 }
 
 type Ed25519 struct {
+	Encoder   generic.Encoder
 	SecretKey ed25519.PrivateKey
 	PublicKey ed25519.PublicKey
-	Encoder   generic.Encoder
 }
 type Ed448 struct {
+	Encoder   generic.Encoder
+	Context   string
 	SecretKey ed448.PrivateKey
 	PublicKey ed448.PublicKey
-	Context   string
-	Encoder   generic.Encoder
 }
 
 func (e *Ed25519) Generate() error {

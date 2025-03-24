@@ -62,9 +62,9 @@ type Compressor interface {
 }
 
 type Gzip struct {
-	Level            int
 	compressedBuff   bytes.Buffer
 	deCompressedBuff bytes.Buffer
+	Level            int
 }
 
 func (g *Gzip) Compress(in []byte) ([]byte, error) {
@@ -141,9 +141,9 @@ func (g *Gzip) GetModes() []int {
 }
 
 type Zstd struct {
-	Level            int
 	compressedBuff   bytes.Buffer
 	deCompressedBuff bytes.Buffer
+	Level            int
 }
 
 func (z *Zstd) Compress(in []byte) ([]byte, error) {
@@ -220,9 +220,9 @@ func (z *Zstd) GetModes() []int {
 }
 
 type Flate struct {
-	Level            int
 	compressedBuff   bytes.Buffer
 	deCompressedBuff bytes.Buffer
+	Level            int
 }
 
 func (f *Flate) Compress(in []byte) ([]byte, error) {
@@ -293,9 +293,9 @@ func (f *Flate) GetModes() []int {
 }
 
 type Zlib struct {
-	Level            int
 	compressedBuff   bytes.Buffer
 	deCompressedBuff bytes.Buffer
+	Level            int
 }
 
 func (zl *Zlib) Compress(in []byte) ([]byte, error) {
@@ -370,11 +370,11 @@ func (zl *Zlib) GetModes() []int {
 }
 
 type Brotli struct {
-	Level            int
 	bw               *brotli.Writer
 	br               *brotli.Reader
 	compressedBuff   bytes.Buffer
 	deCompressedBuff bytes.Buffer
+	Level            int
 }
 
 func (b *Brotli) Compress(in []byte) ([]byte, error) {

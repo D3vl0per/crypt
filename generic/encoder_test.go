@@ -10,8 +10,8 @@ import (
 func TestE2EEncode(t *testing.T) {
 	data := []byte("I'd just like to interject for a moment.")
 	tests := []struct {
-		name    string
 		encoder generic.Encoder
+		name    string
 	}{
 		{
 			name:    "base64",

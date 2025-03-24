@@ -69,9 +69,9 @@ func GenSecretKey() (string, error) {
 }
 
 type Parameters struct {
-	Data       []byte
 	Compressor compression.Compressor
 	Obfuscator Obfuscation
+	Data       []byte
 }
 
 func (k Keychain) Encrypt(p Parameters) ([]byte, error) {

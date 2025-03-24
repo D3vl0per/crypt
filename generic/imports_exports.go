@@ -20,18 +20,18 @@ type ImportExport interface {
 // 1. PublicKey (ed25519.PublicKey) -> ExportData (string)
 // 2. ExportPublicKey (crypto.PublicKey) -> ExportData (string).
 type PKIX struct {
-	PublicKey       ed25519.PublicKey
-	ImportData      string
-	ExportData      string
 	ExportPublicKey crypto.PublicKey
 	Encoder         Encoder
+	ImportData      string
+	ExportData      string
+	PublicKey       ed25519.PublicKey
 }
 
 type PKCS struct {
-	SecretKey  ed25519.PrivateKey
+	Encoder    Encoder
 	ImportData string
 	ExportData string
-	Encoder    Encoder
+	SecretKey  ed25519.PrivateKey
 }
 
 // struct PKIX ImportData (string) -> struct PKIX PublicKey (ed25519.PublicKey).

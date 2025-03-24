@@ -159,8 +159,8 @@ func TestFailPKIX(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		pkix          generic.PKIX
 		expectedError string
+		pkix          generic.PKIX
 	}{
 		{
 			name:          "No keys export",
@@ -302,8 +302,8 @@ func TestFailPKCS(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		pkcs          generic.PKCS
 		expectedError string
+		pkcs          generic.PKCS
 	}{
 		{
 			name:          "No keys export",

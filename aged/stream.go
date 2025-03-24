@@ -21,14 +21,12 @@ import (
 const ChunkSize = 64 * 1024
 
 type Reader struct {
-	a   cipher.AEAD
-	src io.Reader
-
-	unread []byte // decrypted but unread data, backed by buf
+	a      cipher.AEAD
+	src    io.Reader
+	err    error
+	unread []byte
 	buf    [encChunkSize]byte
-
-	err   error
-	nonce [chacha20poly1305.NonceSizeX]byte
+	nonce  [chacha20poly1305.NonceSizeX]byte
 }
 
 const (
@@ -159,10 +157,10 @@ func nonceIsZero(nonce *[chacha20poly1305.NonceSizeX]byte) bool {
 type Writer struct {
 	a         cipher.AEAD
 	dst       io.Writer
-	unwritten []byte // backed by buf
+	err       error
+	unwritten []byte
 	buf       [encChunkSize]byte
 	nonce     [chacha20poly1305.NonceSizeX]byte
-	err       error
 }
 
 func NewWriter(key []byte, dst io.Writer) (*Writer, error) {

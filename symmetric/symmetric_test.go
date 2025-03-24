@@ -143,9 +143,9 @@ func TestE2EE(t *testing.T) {
 func TestE2EEFault(t *testing.T) {
 	type cases struct {
 		name        string
+		expectedErr string
 		key         []byte
 		payload     []byte
-		expectedErr string
 	}
 
 	type testStructue struct {
@@ -158,8 +158,8 @@ func TestE2EEFault(t *testing.T) {
 	type casesStream struct {
 		sym         symmetric.SymmetricStream
 		name        string
-		payload     []byte
 		expectedErr string
+		payload     []byte
 	}
 
 	type testStructueStream struct {

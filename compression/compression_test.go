@@ -177,9 +177,9 @@ func testRoundTrip(t *testing.T, compressor compression.Compressor, data []byte)
 func TestRoundTripsFault(t *testing.T) {
 	type cases struct {
 		name        string
-		level       int
-		data        []byte
 		expectedErr string
+		data        []byte
+		level       int
 	}
 
 	type testStructue struct {

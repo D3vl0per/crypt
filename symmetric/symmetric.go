@@ -40,8 +40,8 @@ type AesGCM struct {
 }
 
 type XChaCha20Stream struct {
-	Key  []byte
 	Hash func() hash.Hash
+	Key  []byte
 }
 
 // XChaCha20-Poly1305.
