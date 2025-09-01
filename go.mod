@@ -7,7 +7,7 @@ require (
 	github.com/andybalholm/brotli v1.1.1
 	github.com/cloudflare/circl v1.6.0
 	github.com/klauspost/compress v1.18.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.36.0
 )
 
